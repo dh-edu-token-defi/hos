@@ -25,6 +25,7 @@ import "hardhat/console.sol";
 contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IBaalSummoner public baalSummoner;
     address public moduleProxyFactory;
+    mapping(address => bool) public allowlistTemplates;
 
     event SetSummoner(address summoner);
 
@@ -34,11 +35,27 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _disableInitializers();
     }
 
-    function initialize(address _baalSummoner, address _moduleProxyFactory) public virtual initializer {
+    function initialize(
+        address _baalSummoner,
+        address _moduleProxyFactory,
+        address[] memory _allowlistTemplates
+    ) public virtual initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
         baalSummoner = IBaalSummoner(_baalSummoner);
         moduleProxyFactory = _moduleProxyFactory;
+        for (uint256 i = 0; i < _allowlistTemplates.length; i++) {
+            allowlistTemplates[_allowlistTemplates[i]] = true;
+        }
+    }
+
+    function isTemplateInAllowlist(address template) internal view returns (bool) {
+        return allowlistTemplates[template];
+    }
+
+    // add setters for allowlistTemplates
+    function setAllowlistTemplate(address _template, bool allowed) public onlyOwner {
+        allowlistTemplates[_template] = allowed;
     }
 
     function calculateBaalAddress(uint256 _saltNonce) public view returns (address) {
@@ -154,6 +171,8 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      */
     function deployToken(bytes calldata initializationParams) internal virtual returns (address token) {
         (address template, bytes memory initDeployParams) = abi.decode(initializationParams, (address, bytes));
+        require(template != address(0), "HOS: template address is zero");
+        require(isTemplateInAllowlist(template), "HOS: template not in allowlist");
 
         (string memory name, string memory symbol) = abi.decode(initDeployParams, (string, string));
 
@@ -165,47 +184,6 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit DeployBaalToken(token);
     }
 
-    function deployShamans(
-        bytes[] memory postInitializationActions,
-        bytes memory initializationShamanParams,
-        uint256 saltNonce
-    ) internal virtual returns (bytes[] memory, address[] memory shamanAddresses) {}
-
-    function deployPredeterminedShaman(
-        bytes[] memory postInitializationActions,
-        bytes memory initializationShamanParams,
-        uint256 saltNonce
-    ) internal virtual returns (bytes[] memory, address[] memory) {
-        (address shamanTemplate, uint256 shamanPermission, ) = abi.decode(
-            initializationShamanParams,
-            (address, uint256, bytes[])
-        );
-
-        uint256 actionsLength = postInitializationActions.length;
-        // amend postInitializationActions to include setShamans
-        bytes[] memory amendedPostInitActions = new bytes[](actionsLength + 1);
-
-        require(shamanTemplate != address(0), "HOS: shamanTemplates address is zero");
-        // Clones because it should not need to be upgradable
-        IShaman shaman = IShaman(payable(Clones.cloneDeterministic(shamanTemplate, bytes32(saltNonce))));
-        address[] memory shamanAddresses = new address[](1);
-        shamanAddresses[0] = address(shaman);
-        uint256[] memory shamanPermissions = new uint256[](1);
-        shamanPermissions[0] = shamanPermission;
-
-        // copy over the rest of the actions
-        for (uint256 i = 0; i < actionsLength; i++) {
-            amendedPostInitActions[i] = postInitializationActions[i];
-        }
-        amendedPostInitActions[actionsLength] = abi.encodeWithSignature(
-            "setShamans(address[],uint256[])",
-            shamanAddresses,
-            shamanPermissions
-        );
-
-        return (amendedPostInitActions, shamanAddresses);
-    }
-
     /**
      * @dev deployShamans
      * the setShaman action is added to the postInitializationActions
@@ -214,7 +192,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param initializationShamanParams The parameters for deploying the shaman (address template, uint256 permissions, ) third peram is for poste deploy init
      *
      */
-    function deployMultiShamans(
+    function deployShamans(
         bytes[] memory postInitializationActions,
         bytes memory initializationShamanParams,
         uint256 saltNonce
@@ -237,6 +215,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         for (uint256 i = 0; i < shamanTemplates.length; i++) {
             require(shamanTemplates[i] != address(0), "HOS: shamanTemplates address is zero");
+            require(isTemplateInAllowlist(shamanTemplates[i]), "HOS: template not in allowlist");
             // Clones because it should not need to be upgradable
             // IShaman shaman = IShaman(payable(Clones.clone(shamanTemplates[i])));
             IShaman shaman = IShaman(payable(Clones.cloneDeterministic(shamanTemplates[i], bytes32(saltNonce + i))));
