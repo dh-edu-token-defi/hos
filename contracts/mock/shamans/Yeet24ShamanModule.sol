@@ -94,26 +94,22 @@ contract Yeet24ShamanModule is Initializable {
 
     // PRIVATE FUNCTIONS
 
-    function sqrt(uint y) internal pure returns (uint) {
-        if (y > 3) {
-            uint z = y;
-            uint x = y / 2 + 1;
-            while (x < z) {
-                z = x;
-                x = (y / x + x) / 2;
-            }
-            return z;
-        } else if (y != 0) {
-            return 1;
+    function sqrt(uint256 x) internal pure returns (uint256) {
+        if (x == 0) return 0;
+        uint256 z = (x + 1) / 2;
+        uint256 y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
         }
-        return 0;
+        return y;
     }
 
     function calculateSqrtPriceX96(uint256 amount0, uint256 amount1) internal pure returns (uint160) {
         require(amount0 > 0 && amount1 > 0, "Token amounts cannot be zero");
 
         // Calculate price ratio as amount1 / amount0 since amount1 is for token1 and amount0 is for token0
-        uint256 priceRatio = (amount1 * 1e18) / amount0; // Price of 1 token0 in terms of token1
+        uint256 priceRatio = ((amount1 * 1e18) / amount0); // Price of 1 token0 in terms of token1
 
         uint256 sqrtPrice = sqrt(priceRatio);
         uint256 sqrtPriceX96 = (sqrtPrice * 2 ** 96) / 1e9;
