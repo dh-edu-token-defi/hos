@@ -8,6 +8,8 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { getChainId, deployments, network } = hre;
   const { deployer } = await hre.getNamedAccounts();
 
+  console.log("deployer", deployer);
+
   console.log("\nDeploying Yeet24ShamanModule factory on network:", network.name);
 
   const chainId = await getChainId();

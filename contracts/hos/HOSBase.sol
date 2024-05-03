@@ -196,7 +196,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes[] memory postInitializationActions,
         bytes memory initializationShamanParams,
         uint256 saltNonce
-    ) internal returns (bytes[] memory, address[] memory) {
+    ) internal virtual returns (bytes[] memory, address[] memory) {
         // summon shaman
 
         (address[] memory shamanTemplates, uint256[] memory shamanPermissions, ) = abi.decode(
