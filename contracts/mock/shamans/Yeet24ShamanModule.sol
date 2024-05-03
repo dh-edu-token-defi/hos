@@ -105,36 +105,56 @@ contract Yeet24ShamanModule is Initializable {
         return y;
     }
 
+    /**
+     * @dev Calculates the sqrtPriceX96 value for Uniswap V3 pools.
+     *
+     * This function computes the square root of the price ratio between two tokens
+     * and adjusts it to the Uniswap V3 format, which requires the square root price
+     * to be scaled by 2^96. This format is used by Uniswap V3 to facilitate high-precision
+     * and low-cost arithmetic operations within the protocol.
+     *
+     * @param amount0 The amount of token0, where token0 is the token with a numerically lower address.
+     * @param amount1 The amount of token1, where token1 is the token with a numerically higher address.
+     *
+     * The price ratio is calculated as the number of units of token1 equivalent to one unit of token0,
+     * scaled up by 1e18 to maintain precision during the division operation.
+     *
+     * @return The square root of the price ratio, adjusted to the Uniswap V3 fixed-point format (sqrtPriceX96).
+     *
+     * Requirements:
+     * - Both `amount0` and `amount1` must be greater than zero to avoid division by zero errors
+     *   and ensure meaningful price calculations.
+     *
+     */
     function calculateSqrtPriceX96(uint256 amount0, uint256 amount1) internal pure returns (uint160) {
         require(amount0 > 0 && amount1 > 0, "Token amounts cannot be zero");
 
-        // Calculate price ratio as amount1 / amount0 since amount1 is for token1 and amount0 is for token0
-        uint256 priceRatio = ((amount1 * 1e18) / amount0); // Price of 1 token0 in terms of token1
+        // Calculate the price ratio as amount1 / amount0
+        // Here, `amount1` is multiplied by 1e18 to retain precision after dividing by `amount0`.
+        uint256 priceRatio = (amount1 * 1e18) / amount0;
 
+        // Compute the square root of the price ratio.
         uint256 sqrtPrice = sqrt(priceRatio);
+
+        // Adjust the square root price to the Uniswap V3 fixed-point format by scaling up by 2^96,
+        // then dividing by 1e9 to correct for the initial scaling by 1e18.
         uint256 sqrtPriceX96 = (sqrtPrice * 2 ** 96) / 1e9;
 
+        // Return the result as a uint160, conforming to the Uniswap V3 type requirement for sqrtPriceX96.
         return uint160(sqrtPriceX96);
     }
 
     // PUBLIC FUNCTIONS
 
     function execute() public returns (uint256 tokenId) {
+        // this todo:
         // check if paused
         // check if threshold is met
-        // loot holder can execute
-        // get balance of DAO
-        // withdraw eth from dao
-        // wrap eth?
-        // mint 50% more shares
-        // approve uniswap
-        // provide liquidity
-        // transfer LP tokens to vault
 
+        // get total tokens(shares) that were minted durring presale
         uint256 shares = IERC20(baal.sharesToken()).totalSupply();
-        //uint24 poolFee = 10000; // 1%
 
-        // get eth from DAO
+        // get eth from presale treasury
         (bool success, ) = baal.target().call(
             abi.encodeWithSignature(
                 "execTransactionFromModule(address,uint256,bytes,uint8)",
@@ -150,7 +170,7 @@ contract Yeet24ShamanModule is Initializable {
         // wrap eth
         (bool sent, ) = address(weth).call{ value: address(this).balance }("");
 
-        // mint 100% shares to this contract
+        // mint 100% shares to this contract. this doubles the total shares
         address[] memory receivers = new address[](1);
         receivers[0] = address(this);
 
@@ -158,13 +178,8 @@ contract Yeet24ShamanModule is Initializable {
         amounts[0] = shares;
         baal.mintShares(receivers, amounts);
 
-        // make shares/loot transferable
+        // Make shares/loot transferable
         baal.setAdminConfig(false, false);
-
-        // uint256 amountAToMint = shares;
-        // uint256 amountBToMint = weth.balanceOf(address(this));
-        // address tokenA = baal.sharesToken();
-        // address tokenB = address(weth);
 
         // Ensure correct order of tokens based on their addresses
         (address token0, address token1, uint256 amount0, uint256 amount1) = baal.sharesToken() < address(weth)
@@ -175,12 +190,15 @@ contract Yeet24ShamanModule is Initializable {
         TransferHelper.safeApprove(token0, address(nonfungiblePositionManager), amount0);
         TransferHelper.safeApprove(token1, address(nonfungiblePositionManager), amount1);
 
+        // calculate the sqrtPriceX96
         uint160 sqrtPriceX96 = calculateSqrtPriceX96(amount0, amount1);
 
         // Create and initialize the pool if necessary
         address pool = nonfungiblePositionManager.createAndInitializePoolIfNecessary(token0, token1, fee, sqrtPriceX96);
 
-        // Set up mintParams with full range
+        // Set up mintParams with full range for volitile token
+        // tick upper and lower need to be a valid tick per fee (divisiable by 200 for 1%)
+        // postion receipt NFT goes to the vault
         INonfungiblePositionManager.MintParams memory mintParams = INonfungiblePositionManager.MintParams({
             token0: token0,
             token1: token1,
