@@ -195,7 +195,7 @@ contract Yeet24ShamanModule is Initializable {
             amount1Desired: amount1,
             amount0Min: 0,
             amount1Min: 0,
-            recipient: msg.sender,
+            recipient: vault,
             deadline: block.timestamp + 15 minutes // Ensure a reasonable deadline
         });
 
