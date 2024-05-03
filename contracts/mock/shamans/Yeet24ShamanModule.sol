@@ -94,17 +94,31 @@ contract Yeet24ShamanModule is Initializable {
 
     // PRIVATE FUNCTIONS
 
-    function sqrt(uint y) internal pure returns (uint z) {
+    function sqrt(uint y) internal pure returns (uint) {
         if (y > 3) {
-            z = y;
+            uint z = y;
             uint x = y / 2 + 1;
             while (x < z) {
                 z = x;
                 x = (y / x + x) / 2;
             }
+            return z;
         } else if (y != 0) {
-            z = 1;
+            return 1;
         }
+        return 0;
+    }
+
+    function calculateSqrtPriceX96(uint256 amount0, uint256 amount1) internal pure returns (uint160) {
+        require(amount0 > 0 && amount1 > 0, "Token amounts cannot be zero");
+
+        // Calculate price ratio as amount1 / amount0 since amount1 is for token1 and amount0 is for token0
+        uint256 priceRatio = (amount1 * 1e18) / amount0; // Price of 1 token0 in terms of token1
+
+        uint256 sqrtPrice = sqrt(priceRatio);
+        uint256 sqrtPriceX96 = (sqrtPrice * 2 ** 96) / 1e9;
+
+        return uint160(sqrtPriceX96);
     }
 
     // PUBLIC FUNCTIONS
@@ -165,9 +179,7 @@ contract Yeet24ShamanModule is Initializable {
         TransferHelper.safeApprove(token0, address(nonfungiblePositionManager), amount0);
         TransferHelper.safeApprove(token1, address(nonfungiblePositionManager), amount1);
 
-        // Calculate sqrtPriceX96 based on the ratio of token0 to token1
-        uint256 priceRatio = (amount0 * 1e18) / amount1; // Adjusted for precision
-        uint160 sqrtPriceX96 = uint160(sqrt(priceRatio) << 96); // Placeholder for actual sqrt function
+        uint160 sqrtPriceX96 = calculateSqrtPriceX96(amount0, amount1);
 
         // Create and initialize the pool if necessary
         address pool = nonfungiblePositionManager.createAndInitializePoolIfNecessary(token0, token1, fee, sqrtPriceX96);
