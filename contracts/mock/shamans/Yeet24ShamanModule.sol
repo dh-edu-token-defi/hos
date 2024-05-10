@@ -64,7 +64,7 @@ contract Yeet24ShamanModule is Initializable {
     INonfungiblePositionManager public constant nonfungiblePositionManager =
         INonfungiblePositionManager(0x1238536071E1c677A632429e3655c799b22cDA52);
 
-    IWETH public constant weth = IWETH(0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9);
+    IWETH public constant weth = IWETH(0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14);
     uint24 private constant fee = 10000; // Fee tier corresponding to 1%
 
     /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
@@ -150,6 +150,8 @@ contract Yeet24ShamanModule is Initializable {
         // this todo:
         // check if paused
         // check if threshold is met
+        // a bunch of checks
+        // maybe events
 
         // get total tokens(shares) that were minted durring presale
         uint256 shares = IERC20(baal.sharesToken()).totalSupply();

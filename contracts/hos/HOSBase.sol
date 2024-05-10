@@ -50,6 +50,8 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function isTemplateInAllowlist(address template) internal view returns (bool) {
+        // todo: add a tag tohelp indexing
+        // emit event somewhere
         return allowlistTemplates[template];
     }
 
@@ -218,6 +220,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             require(isTemplateInAllowlist(shamanTemplates[i]), "HOS: template not in allowlist");
             // Clones because it should not need to be upgradable
             // IShaman shaman = IShaman(payable(Clones.clone(shamanTemplates[i])));
+            // todo: look at using encoded salt from shaman init params
             IShaman shaman = IShaman(payable(Clones.cloneDeterministic(shamanTemplates[i], bytes32(saltNonce + i))));
 
             shamanAddresses[i] = address(shaman);
