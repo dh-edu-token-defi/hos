@@ -21,13 +21,17 @@ import "../interfaces/IBaalGovToken.sol";
 contract Yeet24HOS is HOSBase {
     IBaalAndVaultSummoner public baalVaultSummoner;
 
-    function initialize(address _baalVaultSummoner, address _moduleProxyFactory) public override {
+    function initialize(
+        address _baalVaultSummoner,
+        address _moduleProxyFactory,
+        address[] memory _allowlistTemplates
+    ) public override {
         // baalAndVaultSummoner
         require(_baalVaultSummoner != address(0), "zero address");
         baalVaultSummoner = IBaalAndVaultSummoner(_baalVaultSummoner); //vault summoner
         // standard baalSummoner
         address baalSummoner = baalVaultSummoner._baalSummoner();
-        super.initialize(baalSummoner, _moduleProxyFactory);
+        super.initialize(baalSummoner, _moduleProxyFactory, _allowlistTemplates);
         emit SetSummoner(_baalVaultSummoner);
     }
 
@@ -92,7 +96,7 @@ contract Yeet24HOS is HOSBase {
         bytes memory initializationShamanParams,
         uint256 saltNonce
     ) internal override returns (bytes[] memory actions, address[] memory shamanAddresses) {
-        (actions, shamanAddresses) = super.deployMultiShamans(
+        (actions, shamanAddresses) = super.deployShamans(
             postInitializationActions,
             initializationShamanParams,
             saltNonce

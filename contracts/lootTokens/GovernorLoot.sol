@@ -21,6 +21,7 @@ contract GovernorLoot is
     UUPSUpgradeable
 {
     bool public _initialMintingLocked;
+    string public constant tokenName = "GovLoot";
 
     constructor() {
         _disableInitializers();
