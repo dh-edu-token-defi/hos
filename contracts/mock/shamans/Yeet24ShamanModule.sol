@@ -183,7 +183,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         emit UniswapPositionCreated(pool, tokenId, sqrtPriceX96, liquidity, amount0, amount1);
     }
 
-    function execute() public nonReentrant notExecuted {
+    function execute() public nonReentrant notExecuted isModuleEnabled isBaalAdmin isBaalManager {
         require(block.timestamp >= expiration, "!expired"); // TODO: custom error
 
         uint256 yeethBalance = _baal.target().balance;
@@ -197,10 +197,11 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         uint256[] memory amounts = new uint256[](1);
         // get total tokens(shares) that were minted during pre-sale
         amounts[0] = IERC20(token).totalSupply();
-        // mint 100% shares to this contract. this doubles the total shares
+        
+        // ManagerShaman action: mint 100% shares to this contract. this doubles the total shares
         _baal.mintShares(receivers, amounts);
 
-        // Make shares/loot transferable
+        // AdminShaman action: Make shares/loot transferable
         _baal.setAdminConfig(false, false);
 
         bytes memory wethDepositCalldata = abi.encodeCall(
