@@ -12,7 +12,7 @@ import { IYeet24Shaman } from "./IYeet24Shaman.sol";
 import { AdminShaman } from "../../shaman/AdminShaman.sol";
 import { ManagerShaman } from "../../shaman/ManagerShaman.sol";
 import { IShaman } from "../../shaman/interfaces/IShaman.sol";
-import { FactoryFriendly, ZodiacModuleShaman } from "../../shaman/ZodiacModuleShaman.sol";
+import { ZodiacModuleShaman } from "../../shaman/ZodiacModuleShaman.sol";
 import { INonfungiblePositionManager } from "../../libs/INonfungiblePositionManager.sol";
 import { IWETH9 } from "../../libs/IWETH9.sol";
 import { CustomMath } from "../../libraries/CustomMath.sol";

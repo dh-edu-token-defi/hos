@@ -1,12 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.7 <0.9.0;
 
-import { FactoryFriendly, Module } from "@gnosis.pm/zodiac/contracts/core/Module.sol";
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { IAvatar } from "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
 
 import { ShamanBase } from "./ShamanBase.sol";
+import { ZodiacModule } from "./ZodiacModule.sol";
 
-abstract contract ZodiacModuleShaman is Initializable, Module, ShamanBase {
+error ZodiacModuleShaman__NotEnabledModule();
+
+abstract contract ZodiacModuleShaman is ZodiacModule, ShamanBase {
+    modifier isModuleEnabled() {
+        if (!moduleEnabled()) revert ZodiacModuleShaman__NotEnabledModule();
+        _;
+    }
+
     function __ZodiacModuleShaman__init(
         string memory _name,
         address _baalAddress,
@@ -22,8 +29,8 @@ abstract contract ZodiacModuleShaman is Initializable, Module, ShamanBase {
         setUp(_initializeParams);
     }
 
-    function setUp(bytes memory /*_initializeParams*/) public override(FactoryFriendly) onlyInitializing {
-        __Ownable_init();
+    function setUp(bytes memory _initializeParams) public virtual override(ZodiacModule) onlyInitializing {
+        super.setUp(_initializeParams);
         transferOwnership(_vault);
     }
 
@@ -32,7 +39,11 @@ abstract contract ZodiacModuleShaman is Initializable, Module, ShamanBase {
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ShamanBase) returns (bool) {
         return
-            interfaceId == type(Module).interfaceId ||
+            interfaceId == type(ZodiacModule).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+    function moduleEnabled() public view override returns (bool) {
+        return IAvatar(vault()).isModuleEnabled(address(this));
     }
 }
