@@ -23,9 +23,6 @@ error YeetShamanModule_BaalVaultOnly();
 // contract should be set to a shaman (admin, manager) and a treasury module in the summoner
 contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, ManagerShaman {
     bool public executed;
-    // INonfungiblePositionManager public constant nonfungiblePositionManager =
-    //     INonfungiblePositionManager(0x1238536071E1c677A632429e3655c799b22cDA52);
-    // IWETH9 public constant weth = IWETH9(0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14);
     INonfungiblePositionManager public nonfungiblePositionManager;
     IWETH9 public weth;
 

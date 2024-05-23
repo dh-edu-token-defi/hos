@@ -231,7 +231,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             // Clones because it should not need to be upgradable
             // TODO: look at using encoded salt from shaman init params
             bytes32 salt = keccak256(
-                abi.encodePacked(
+                abi.encode(
                     baalAddress,
                     i,
                     shamanTemplates[i],
