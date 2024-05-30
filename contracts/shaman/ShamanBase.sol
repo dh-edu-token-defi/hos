@@ -19,7 +19,7 @@ abstract contract ShamanBase is IShaman, ContextUpgradeable, ReentrancyGuardUpgr
 
     function __ShamanBase_init(string memory _name, address _baalAddress, address _vaultAddress) internal onlyInitializing {
         if (bytes(_name).length == 0) revert ShamanBase__InvalidName();
-        if (_baalAddress == address(0) || _vaultAddress == address(0)) revert ShamanBase__InvalidAddress();
+        if (_baalAddress == address(0)) revert ShamanBase__InvalidAddress();
         __Context_init();
         __ReentrancyGuard_init();
         __ERC165_init();
@@ -29,7 +29,7 @@ abstract contract ShamanBase is IShaman, ContextUpgradeable, ReentrancyGuardUpgr
     function __ShamanBase_init_unchained(string memory _name, address _baalAddress, address _vaultAddress) internal onlyInitializing {
         NAME = _name;
         _baal = IBaal(_baalAddress);
-        _vault = _vaultAddress;
+        _vault = _vaultAddress != address(0) ? _baal.avatar() : _vaultAddress;
     }
 
     /**
