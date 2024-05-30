@@ -203,6 +203,17 @@ const config: HardhatUserConfig = {
     outDir: "types",
     target: "ethers-v5",
   },
+  etherscan: {
+    apiKey: {
+      mainnet: explorerApiKey("mainnet"),
+      sepolia: explorerApiKey("sepolia"),
+      optimisticEthereum: explorerApiKey("optimism-mainnet"),
+      // optimisticSepolia: explorerApiKey("optimism-sepolia"),
+      arbitrumOne: explorerApiKey("arbitrum-mainnet"),
+      // arbitrumSepolia: explorerApiKey("arbitrum-sepolia"),
+      polygon: explorerApiKey("polygon-mainnet"),
+    },
+  },
   external: {
     contracts: [
       {

@@ -93,7 +93,7 @@ export const deploymentConfig: { [key: string]: Contracts & Ownable } = {
     btSummoner: "0xD69e5B8F6FA0E5d94B93848700655A78DF24e387",
     shares: "0x52acf023d38A31f7e7bC92cCe5E68d36cC9752d6",
     owner: "0xCED608Aa29bB92185D9b6340Adcbfa263DAe075b",
-    yeet24ShamanModule: "0xc099d3f30d5ad51497b72d17e1b75f7d8e921410",
+    yeet24ShamanModule: "0x7Ac82133E0c5cCA103f5db920bb63A6aF239A415",
     yeeter: "0x62ff4ca410e9e58f5ce8b2ad03695ef0ad990381",
     sharesToken: "0x52acf023d38A31f7e7bC92cCe5E68d36cC9752d6",
     lootToken: "0x8a4a9e36106ee290811b89e06e2fafe913507965", // gov loot

@@ -1,20 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
-import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
-
-import "@daohaus/baal-contracts/contracts/interfaces/IBaal.sol";
-import "@daohaus/baal-contracts/contracts/interfaces/IBaalToken.sol";
+import { IBaal } from "@daohaus/baal-contracts/contracts/interfaces/IBaal.sol";
+import { IBaalToken } from "@daohaus/baal-contracts/contracts/interfaces/IBaalToken.sol";
 
 // TODO: use on upcoming release
 // import "@daohaus/baal-contracts/contracts/interfaces/IBaalAndVaultSummoner.sol";
-
-import "./HOSBase.sol";
-
-import "../interfaces/IBaalGovToken.sol";
+import { HOSBase, IBaalAndVaultSummoner, IBaalFixedToken, IShaman } from "./HOSBase.sol";
+import { IBaalGovToken } from "../interfaces/IBaalGovToken.sol";
 
 // import "hardhat/console.sol";
 
@@ -92,11 +88,13 @@ contract Yeet24HOS is HOSBase {
     }
 
     function deployShamans(
+        address baalAddress,
         bytes[] memory postInitializationActions,
         bytes memory initializationShamanParams,
         uint256 saltNonce
     ) internal override returns (bytes[] memory actions, address[] memory shamanAddresses) {
         (actions, shamanAddresses) = super.deployShamans(
+            baalAddress,
             postInitializationActions,
             initializationShamanParams,
             saltNonce
@@ -104,53 +102,35 @@ contract Yeet24HOS is HOSBase {
     }
 
     /**
-     * @dev setUpShaman
-     * NFT6551ClaimShaman
-     * init params (address _nftAddress, address _registry, address _tbaImp, uint256 _perNft, uint256 _sharesPerNft)
-     * @param shaman The address of the shaman
-     * @param baal The address of the baal
-     * @param vault The address of the vault
-     * @param initializationShamanParams The parameters for deploying the token
-     * @param index The index of the shaman
-     */
-    function setUpShaman(
-        address shaman,
-        address baal,
-        address vault,
-        bytes memory initializationShamanParams,
-        uint256 index
-    ) internal {
-        // TODO: mismatch length check, it is not checking the length of initializationShamanParams
-        // against the length of shamans
-        (, , bytes[] memory initShamanDeployParams) = abi.decode(
-            initializationShamanParams,
-            (address, uint256, bytes[])
-        );
-        IShaman(shaman).setup(baal, vault, initShamanDeployParams[index]);
-    }
-
-    /**
      * @dev sets up the already deployed claim shaman with init params
      * shaman init params (address _nftAddress, address _registry, address _tbaImp, uint256 _perNft, uint256 _sharesPerNft)
      * @param initializationShamanParams shaman init params
-     * @param lootToken address
-     * @param sharesToken address
      * @param shamans IShamans
      * @param baal address
      * @param vault address
      */
     function postDeployShamanActions(
         bytes calldata initializationShamanParams,
-        address lootToken,
-        address sharesToken,
+        address /*lootToken*/,
+        address /*sharesToken*/,
         address[] memory shamans,
         address baal,
         address vault
     ) internal override {
         // init shaman here
+        // TODO: mismatch length check, it is not checking the length of initializationShamanParams
+        // against the length of shamans
+        // TODO: no need to check lengths if calling deployShamans prior to this function is assured
+        (, , bytes[] memory initShamanDeployParams) = abi.decode(
+            initializationShamanParams,
+            (address, uint256, bytes[])
+        );
         // shaman setup with dao address, vault address and initShamanParams
-        for (uint256 i = 0; i < shamans.length; i++) {
-            setUpShaman(shamans[i], baal, vault, initializationShamanParams, i);
+        for (uint256 i; i < shamans.length;) {
+            IShaman(shamans[i]).setup(baal, vault, initShamanDeployParams[i]);
+            unchecked {
+                ++i;
+            }
         }
     }
 
