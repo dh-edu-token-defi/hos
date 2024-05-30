@@ -30,6 +30,9 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
     uint256 public expiration;
     uint24 public poolFee; // Fee tier corresponding to 1%
 
+    address public pool;
+    uint256 public positionId;
+
     /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
@@ -132,7 +135,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         uint160 sqrtPriceX96 = CustomMath.calculateSqrtPriceX96(liquidityAmount0, liquidityAmount0);
 
         // Create and initialize the pool if necessary
-        address pool = nonfungiblePositionManager.createAndInitializePoolIfNecessary(
+        pool = nonfungiblePositionManager.createAndInitializePoolIfNecessary(
             token0,
             token1,
             poolFee,
@@ -163,6 +166,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
 
         // Mint the position
         (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = nonfungiblePositionManager.mint(mintParams);
+        positionId = tokenId;
 
         // Remove allowance and refund in both assets.
         if (amount0 < liquidityAmount0) {
