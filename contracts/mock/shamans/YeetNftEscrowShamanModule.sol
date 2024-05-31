@@ -16,7 +16,7 @@ error YeetShamanModule_BaalVaultOnly();
 // contract should be set to a shaman (admin, manager) and a treasury module in the summoner
 // TODo
 contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, AdminShaman, ManagerShaman {
-    bool public isActive = true;
+    bool public isActive;
     uint256 public threshold;
     uint256 public expiration;
     address public seller;
@@ -40,7 +40,7 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
     }
 
     modifier notExecuted() {
-        if (isActive == true) revert YeetShamanModule__AlreadyExecuted();
+        if (executed() == true) revert YeetShamanModule__AlreadyExecuted();
         _;
     }
 
@@ -79,6 +79,7 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
             (uint256, uint256, address, address, uint256)
         );
         __YeetNftEscrowShamanModule__init(_baal, _vault, _threshold, _expiration, _seller, _nftAddress, _tokenId);
+        isActive = true;
         emit Setup(_baal, _vault, _threshold, _expiration, _seller, _nftAddress, _tokenId);
     }
 
@@ -128,6 +129,14 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
     // VIEW FUNCTIONS
     function executed() public view override returns (bool) {
         return !isActive;
+    }
+
+    function canExecute() public view returns (bool) {
+        return
+            IERC721(nftAddress).getApproved(tokenId) == address(this) &&
+            block.timestamp >= expiration &&
+            _baal.target().balance >= threshold &&
+            isActive;
     }
 
     receive() external payable {}

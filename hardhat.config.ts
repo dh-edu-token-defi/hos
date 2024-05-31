@@ -1,12 +1,12 @@
+import "@nomicfoundation/hardhat-toolbox";
 import { config as dotenvConfig } from "dotenv";
+import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
 
-import "@nomicfoundation/hardhat-toolbox";
-import "hardhat-deploy";
-
 import "./tasks/accounts";
+
 // import "./tasks/greet";
 // import "./tasks/taskDeploy";
 
@@ -92,10 +92,10 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
     accounts: process.env.ACCOUNT_PK
       ? [process.env.ACCOUNT_PK]
       : {
-        count: 10,
-        mnemonic,
-        path: "m/44'/60'/0'/0",
-      },
+          count: 10,
+          mnemonic,
+          path: "m/44'/60'/0'/0",
+        },
     chainId: chainIds[chain],
     url: jsonRpcUrl,
     verify: {
@@ -113,7 +113,7 @@ const config: HardhatUserConfig = {
   },
   gasReporter: {
     currency: "USD",
-    enabled: process.env.REPORT_GAS === 'true' ? true : false,
+    enabled: process.env.REPORT_GAS === "true" ? true : false,
     excludeContracts: [],
     src: "./contracts",
   },
@@ -148,7 +148,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.7.5',
+        version: "0.7.5",
         settings: {
           optimizer: {
             enabled: true,
@@ -157,7 +157,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        version: '0.8.7',
+        version: "0.8.7",
         settings: {
           optimizer: {
             enabled: true,
@@ -175,7 +175,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        version: '0.8.13',
+        version: "0.8.13",
         settings: {
           optimizer: {
             enabled: true,
@@ -184,7 +184,7 @@ const config: HardhatUserConfig = {
         },
       },
       {
-        version: '0.8.19',
+        version: "0.8.19",
         settings: {
           metadata: {
             // Not including the metadata hash
@@ -206,7 +206,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       mainnet: explorerApiKey("mainnet"),
-      sepolia: explorerApiKey("sepolia"),
+      sepolia: "IR8FMGNMEU9TAMFWUCRQTPQX29XWIVTTBN",
       optimisticEthereum: explorerApiKey("optimism-mainnet"),
       // optimisticSepolia: explorerApiKey("optimism-sepolia"),
       arbitrumOne: explorerApiKey("arbitrum-mainnet"),
@@ -217,10 +217,10 @@ const config: HardhatUserConfig = {
   external: {
     contracts: [
       {
-        artifacts: 'node_modules/@daohaus/baal-contracts/export/artifacts',
-        deploy: 'node_modules/@daohaus/baal-contracts/export/deploy'
-      }
-    ]
+        artifacts: "node_modules/@daohaus/baal-contracts/export/artifacts",
+        deploy: "node_modules/@daohaus/baal-contracts/export/deploy",
+      },
+    ],
   },
 };
 
