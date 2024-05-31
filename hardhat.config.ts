@@ -206,7 +206,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       mainnet: explorerApiKey("mainnet"),
-      sepolia: "IR8FMGNMEU9TAMFWUCRQTPQX29XWIVTTBN",
+      sepolia: explorerApiKey("mainnet"),
       optimisticEthereum: explorerApiKey("optimism-mainnet"),
       // optimisticSepolia: explorerApiKey("optimism-sepolia"),
       arbitrumOne: explorerApiKey("arbitrum-mainnet"),
