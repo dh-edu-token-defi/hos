@@ -4,7 +4,9 @@ type Contracts = {
   btSummoner: string;
   shares: string;
   yeet24ShamanModule?: string;
+  yeetNftEscrowShamanModule?: string;
   yeeter?: string;
+  yeeter2?: string;
   sharesToken?: string;
   lootToken?: string;
 };
@@ -97,5 +99,7 @@ export const deploymentConfig: { [key: string]: Contracts & Ownable } = {
     yeeter: "0x62ff4ca410e9e58f5ce8b2ad03695ef0ad990381",
     sharesToken: "0x52acf023d38A31f7e7bC92cCe5E68d36cC9752d6",
     lootToken: "0x8a4a9e36106ee290811b89e06e2fafe913507965", // gov loot
+    yeeter2: "0x29da3216e205fbda1726c21a3059251e8aab4078",
+    yeetNftEscrowShamanModule: "0x3c6557514c84a08ae01cf85b768590dd5ba9ff11",
   },
 };
