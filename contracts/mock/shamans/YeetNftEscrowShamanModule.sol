@@ -6,16 +6,15 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import { IYeetNftEscrowShaman } from "./IYeetNftEscrowShaman.sol";
 import { AdminShaman } from "../../shaman/AdminShaman.sol";
-import { ManagerShaman } from "../../shaman/ManagerShaman.sol";
 import { IShaman } from "../../shaman/interfaces/IShaman.sol";
 import { ZodiacModuleShaman } from "../../shaman/ZodiacModuleShaman.sol";
 
 error YeetShamanModule__AlreadyExecuted();
 error YeetShamanModule_BaalVaultOnly();
 
-// contract should be set to a shaman (admin, manager) and a treasury module in the summoner
+// contract should be set to a shaman (admin) and a treasury module in the summoner
 // TODo
-contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, AdminShaman, ManagerShaman {
+contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, AdminShaman {
     bool public isActive;
     uint256 public threshold;
     uint256 public expiration;
@@ -55,7 +54,6 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
     ) internal onlyInitializing {
         __ZodiacModuleShaman__init("YeetNftEscrowShamanModule", _baal, _vault, "");
         __AdminShaman_init_unchained();
-        __ManagerShaman_init_unchained();
         __YeetNftEscrowShamanModule__init_unchained(_threshold, _expiration, _seller, _nftAddress, _tokenId);
     }
 
@@ -88,12 +86,12 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
      */
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ZodiacModuleShaman, AdminShaman, ManagerShaman) returns (bool) {
+    ) public view virtual override(ZodiacModuleShaman, AdminShaman) returns (bool) {
         return interfaceId == type(IYeetNftEscrowShaman).interfaceId || super.supportsInterface(interfaceId);
     }
 
     // PUBLIC FUNCTIONS
-    function execute() public nonReentrant notExecuted isModuleEnabled isBaalAdmin isBaalManager {
+    function execute() public nonReentrant notExecuted isModuleEnabled isBaalAdmin {
         require(block.timestamp >= expiration, "!expired"); // TODO: custom error
 
         uint256 yeethBalance = _baal.target().balance;
@@ -112,7 +110,7 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
         // AdminShaman action: Make shares/loot transferable
         _baal.setAdminConfig(false, false);
 
-        bool success = exec(seller, yeethBalance, "0x", Enum.Operation.DelegateCall);
+        bool success = exec(seller, yeethBalance, "", Enum.Operation.Call);
 
         require(success, "transfer failed"); // TODO: custom error
 
