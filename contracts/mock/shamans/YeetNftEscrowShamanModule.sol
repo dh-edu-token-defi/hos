@@ -52,7 +52,7 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
         address _nftAddress,
         uint256 _tokenId
     ) internal onlyInitializing {
-        __ZodiacModuleShaman__init("YeetNftEscrowShamanModule", _baal, _vault, "");
+        __ZodiacModuleShaman__init("YeetNftEscrowShamanModule", _baal, _vault);
         __AdminShaman_init_unchained();
         __YeetNftEscrowShamanModule__init_unchained(_threshold, _expiration, _seller, _nftAddress, _tokenId);
     }
