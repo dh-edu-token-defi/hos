@@ -61,7 +61,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         uint256 _expiration,
         uint24 _poolFee
     ) internal onlyInitializing {
-        __ZodiacModuleShaman__init("Yeet24ShamanModule", _baal, _vault, "");
+        __ZodiacModuleShaman__init("Yeet24ShamanModule", _baal, _vault);
         __AdminShaman_init_unchained();
         __ManagerShaman_init_unchained();
         __Yeet24ShamanModule__init_unchained(_nftPositionManager, _weth9Address, _threshold, _expiration, _poolFee);

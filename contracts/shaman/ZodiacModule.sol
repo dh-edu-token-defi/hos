@@ -6,7 +6,8 @@ import { FactoryFriendly, Module } from "@gnosis.pm/zodiac/contracts/core/Module
 abstract contract ZodiacModule is Module {
     function moduleEnabled() public virtual view returns (bool);
 
-    function setUp(bytes memory /*_initializeParams*/) public virtual override(FactoryFriendly) onlyInitializing {
+    function setUp(bytes memory _initializeParams) public virtual override(FactoryFriendly) onlyInitializing {
         __Ownable_init();
+        (avatar, target) = abi.decode(_initializeParams, (address, address));
     }
 }
