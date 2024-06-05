@@ -20,8 +20,8 @@ abstract contract ZodiacModuleShaman is ZodiacModule, ShamanBase {
         address _vaultAddress
     ) internal onlyInitializing {
         __ShamanBase_init(_name, _baalAddress, _vaultAddress);
+        _vaultAddress = vault();
         __ZodiacModuleShaman__init_unchained(abi.encode(_vaultAddress, _vaultAddress));
-
     }
 
     function __ZodiacModuleShaman__init_unchained(bytes memory _initializeParams) internal onlyInitializing {
