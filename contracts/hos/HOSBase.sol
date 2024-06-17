@@ -23,10 +23,13 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IBaalSummoner public baalSummoner;
     address public moduleProxyFactory;
     mapping(address => bool) public allowlistTemplates;
+    bytes32 public referrerId;
 
     event SetSummoner(address summoner);
 
     event DeployBaalToken(address tokenAddress);
+
+    event HOSReferrerId(bytes32 _referrerId);
 
     constructor() {
         _disableInitializers();
@@ -35,7 +38,8 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function initialize(
         address _baalSummoner,
         address _moduleProxyFactory,
-        address[] memory _allowlistTemplates
+        address[] memory _allowlistTemplates,
+        string memory _referrerId
     ) public virtual initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -47,6 +51,8 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
                 ++i;
             }
         }
+        referrerId = bytes32(bytes(_referrerId));
+        emit HOSReferrerId(referrerId);
     }
 
     function isTemplateInAllowlist(address template) internal view returns (bool) {
@@ -58,6 +64,11 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // add setters for allowlistTemplates
     function setAllowlistTemplate(address _template, bool allowed) public onlyOwner {
         allowlistTemplates[_template] = allowed;
+    }
+
+    function setReferrerId(string memory _referrerId) external onlyOwner {
+        referrerId = bytes32(bytes(_referrerId));
+        emit HOSReferrerId(referrerId);
     }
 
     function calculateBaalAddress(uint256 _saltNonce) public view returns (address) {
@@ -229,7 +240,6 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             require(shamanTemplates[i] != address(0), "HOS: shamanTemplates address is zero");
             require(isTemplateInAllowlist(shamanTemplates[i]), "HOS: template not in allowlist");
             // Clones because it should not need to be upgradable
-            // TODO: look at using encoded salt from shaman init params
             bytes32 salt = keccak256(
                 abi.encode(
                     baalAddress,
