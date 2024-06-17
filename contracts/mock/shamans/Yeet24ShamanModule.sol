@@ -3,10 +3,9 @@ pragma solidity >=0.8.7 < 0.9.0;
 
 import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
-// import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-// import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { IUniswapV3Factory } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import { IERC20, TransferHelper } from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
-import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
 import { IYeet24Shaman } from "./IYeet24Shaman.sol";
 import { AdminShaman } from "../../shaman/AdminShaman.sol";
@@ -17,8 +16,15 @@ import { INonfungiblePositionManager } from "../../libs/INonfungiblePositionMana
 import { IWETH9 } from "../../libs/IWETH9.sol";
 import { CustomMath } from "../../libraries/CustomMath.sol";
 
-error YeetShamanModule__AlreadyExecuted();
-error YeetShamanModule_BaalVaultOnly();
+// import "hardhat/console.sol";
+
+error Yeet24ShamanModule__InvalidEndTime();
+error Yeet24ShamanModule__InvalidPoolFee();
+error Yeet24ShamanModule__YeetNotFinished();
+error Yeet24ShamanModule__ThresholdNotMet();
+error Yeet24ShamanModule__AlreadyExecuted();
+error Yeet24ShamanModule__BaalVaultOnly();
+error Yeet24ShamanModule__ExecutionFailed(bytes returnData);
 
 // contract should be set to a shaman (admin, manager) and a treasury module in the summoner
 contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, ManagerShaman {
@@ -26,29 +32,30 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
     INonfungiblePositionManager public nonfungiblePositionManager;
     IWETH9 public weth;
 
-    uint256 public threshold;
-    uint256 public expiration;
-    uint24 public poolFee; // Fee tier corresponding to 1%
+    uint256 public endTime;
+    uint256 public goal;
+    uint24 public poolFee; // e.g. fee tier corresponding to 1%
 
     address public pool;
     uint256 public positionId;
 
-    /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
-    int24 internal constant MIN_TICK = -887272;
+    /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128.
+    /// Make sure lower/upper tick are valid tick per fee (e.g. 1% fee uses tickSpacing=200)
+    int24 internal minTick;
     /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
-    int24 internal constant MAX_TICK = -MIN_TICK;
+    int24 internal maxTick;
 
-    event Setup(address indexed baal, address indexed vault, uint256 threshold, uint256 expiration, uint256 poolFee);
+    event Setup(address indexed baal, address indexed vault, uint256 goal, uint256 endTime, uint256 poolFee);
     event Executed(address indexed token, uint256 tokenSupply, uint256 ethSupply);
-    event UniswapPositionCreated(address indexed pool, uint256 indexed tokenId, uint160 sqrtPriceX96, uint128 liquidity, uint256 amount0, uint256 amount1);
+    event UniswapPositionCreated(address indexed pool, uint256 indexed positionId, uint160 sqrtPriceX96, uint128 liquidity, uint256 amount0, uint256 amount1);
 
     modifier baalVaultOnly() {
-        if (_msgSender() != vault()) revert YeetShamanModule_BaalVaultOnly();
+        if (_msgSender() != vault()) revert Yeet24ShamanModule__BaalVaultOnly();
         _;
     }
 
     modifier notExecuted() {
-        if (executed) revert YeetShamanModule__AlreadyExecuted();
+        if (executed) revert Yeet24ShamanModule__AlreadyExecuted();
         _;
     }
 
@@ -57,27 +64,33 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         address _vault,
         address _nftPositionManager,
         address _weth9Address,
-        uint256 _threshold,
-        uint256 _expiration,
+        uint256 _goal,
+        uint256 _endTime,
         uint24 _poolFee
     ) internal onlyInitializing {
         __ZodiacModuleShaman__init("Yeet24ShamanModule", _baal, _vault);
         __AdminShaman_init_unchained();
         __ManagerShaman_init_unchained();
-        __Yeet24ShamanModule__init_unchained(_nftPositionManager, _weth9Address, _threshold, _expiration, _poolFee);
+        __Yeet24ShamanModule__init_unchained(_nftPositionManager, _weth9Address, _goal, _endTime, _poolFee);
     }
 
     function __Yeet24ShamanModule__init_unchained(
         address _nftPositionManager,
         address _weth9Address,
-        uint256 _threshold,
-        uint256 _expiration,
+        uint256 _goal,
+        uint256 _endTime,
         uint24 _poolFee
     ) internal onlyInitializing {
+        if (_endTime <= block.timestamp) revert Yeet24ShamanModule__InvalidEndTime();
         nonfungiblePositionManager = INonfungiblePositionManager(_nftPositionManager);
+        IUniswapV3Factory factory = IUniswapV3Factory(nonfungiblePositionManager.factory());
+        int24 tickSpacing = factory.feeAmountTickSpacing(_poolFee);
+        if (tickSpacing == 0) revert Yeet24ShamanModule__InvalidPoolFee();
+        maxTick = (887272 / tickSpacing) * tickSpacing;
+        minTick = -maxTick;
         weth = IWETH9(_weth9Address);
-        threshold = _threshold;
-        expiration = _expiration;
+        goal = _goal;
+        endTime = _endTime;
         poolFee = _poolFee;
     }
 
@@ -85,7 +98,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         (
             address _nftPositionManager,
             address _weth9Address,
-            uint256 _threshold,
+            uint256 _goal,
             uint256 _expiration,
             uint24 _poolFee
         ) = abi.decode(
@@ -97,11 +110,11 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             _vault,
             _nftPositionManager,
             _weth9Address,
-            _threshold,
+            _goal,
             _expiration,
             _poolFee
         );
-        emit Setup(_baal, _vault, _threshold, _expiration, _poolFee);
+        emit Setup(_baal, _vault, _goal, _expiration, _poolFee);
     }
 
     /**
@@ -113,11 +126,9 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             super.supportsInterface(interfaceId);
     }
 
-    // VIEW FUNCTIONS
-
-    // PRIVATE FUNCTIONS
-
-    // PUBLIC FUNCTIONS
+    function goalAchieved() public view returns (bool) {
+        return vault().balance >= goal;
+    }
 
     function createPoolAndMintPosition(
         address token0,
@@ -130,9 +141,12 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         (token0, token1, liquidityAmount0, liquidityAmount1) = token0 < token1
             ? (token0, token1, liquidityAmount0, liquidityAmount1)
             : (token1, token0, liquidityAmount1, liquidityAmount0);
+        // console.log("Tokens", token0, token1);
+        // console.log("Liquidity", liquidityAmount0, liquidityAmount1);
 
         // calculate the sqrtPriceX96
         uint160 sqrtPriceX96 = CustomMath.calculateSqrtPriceX96(liquidityAmount0, liquidityAmount0);
+        // console.log("sqrtPriceX96", sqrtPriceX96);
 
         // Create and initialize the pool if necessary
         pool = nonfungiblePositionManager.createAndInitializePoolIfNecessary(
@@ -141,43 +155,50 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             poolFee,
             sqrtPriceX96
         );
+        // console.log("pool", pool);
 
-        // TODO: check safe approve from vault
         // approve weth and shares with NonfungiblePositionManager (taken from univ3 docs)
         TransferHelper.safeApprove(token0, address(nonfungiblePositionManager), liquidityAmount0);
         TransferHelper.safeApprove(token1, address(nonfungiblePositionManager), liquidityAmount1);
+        // console.log("approve OK");
 
-        // Set up mintParams with full range for volitile token
-        // tick upper and lower need to be a valid tick per fee (divisiable by 200 for 1%)
-        // postion receipt NFT goes to the vault
+        // Set up mintParams with full range for volatile token
+        // tick upper and lower need to be a valid tick per fee (divisible by 200 for 1%)
+        // position receipt NFT goes to the vault
         INonfungiblePositionManager.MintParams memory mintParams = INonfungiblePositionManager.MintParams({
             token0: token0,
             token1: token1,
             fee: poolFee,
-            tickLower: MIN_TICK,
-            tickUpper: MAX_TICK,
+            tickLower: minTick,
+            tickUpper: maxTick,
             amount0Desired: liquidityAmount0,
             amount1Desired: liquidityAmount1,
             amount0Min: 0,
             amount1Min: 0,
-            recipient: _msgSender(),
+            recipient: _msgSender(), // baalVaultOnly ensures vault is the caller
             deadline: block.timestamp + 15 minutes // Ensure a reasonable deadline
         });
 
         // Mint the position
         (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = nonfungiblePositionManager.mint(mintParams);
         positionId = tokenId;
+        // console.log("tokenId", tokenId);
+        // console.log("liquidity", liquidity);
+        // console.log("amount0", amount0);
+        // console.log("amount1", amount1);
 
         // Remove allowance and refund in both assets.
         if (amount0 < liquidityAmount0) {
             TransferHelper.safeApprove(token0, address(nonfungiblePositionManager), 0);
             uint256 refund0 = liquidityAmount0 - amount0;
+            // console.log("refund0", refund0);
             TransferHelper.safeTransfer(token0, _msgSender(), refund0);
         }
 
         if (amount1 < liquidityAmount1) {
             TransferHelper.safeApprove(token1, address(nonfungiblePositionManager), 0);
             uint256 refund1 = liquidityAmount1 - amount1;
+            // console.log("refund1", refund1);
             TransferHelper.safeTransfer(token1, _msgSender(), refund1);
         }
 
@@ -185,11 +206,11 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
     }
 
     function execute() public nonReentrant notExecuted isModuleEnabled isBaalAdmin isBaalManager {
-        require(block.timestamp >= expiration, "!expired"); // TODO: custom error
+        if (block.timestamp <= endTime) revert Yeet24ShamanModule__YeetNotFinished();
 
-        uint256 yeethBalance = _baal.target().balance;
+        uint256 yeethBalance = vault().balance;
 
-        require(yeethBalance >= threshold, "threshold not met"); // TODO: custom error
+        if (yeethBalance < goal) revert Yeet24ShamanModule__ThresholdNotMet();
 
         address token = _baal.sharesToken();
         
@@ -202,7 +223,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         // ManagerShaman action: mint 100% shares to this contract. this doubles the total shares
         _baal.mintShares(receivers, amounts);
 
-        // AdminShaman action: Make shares/loot transferable
+        // AdminShaman action: Make shares/loot transferrable
         _baal.setAdminConfig(false, false);
 
         bytes memory wethDepositCalldata = abi.encodeCall(
@@ -216,28 +237,23 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         );
 
         bytes memory multisendTxs = abi.encodePacked(
-            abi.encode(Enum.Operation.Call, address(weth), yeethBalance, 0, ""), // eth -> weth
-            abi.encode(Enum.Operation.Call, address(weth), 0, wethDepositCalldata.length, wethDepositCalldata), // transfer weth to shaman
-            abi.encode(Enum.Operation.Call, address(this), 0, createPositionCalldata.length, createPositionCalldata) // create pool + position
+            encodeMultiSendAction(Enum.Operation.Call, address(weth), yeethBalance, bytes("")), // eth -> weth
+            encodeMultiSendAction(Enum.Operation.Call, address(weth), 0, wethDepositCalldata), // transfer weth to shaman
+            encodeMultiSendAction(Enum.Operation.Call, address(this), 0, createPositionCalldata) // create pool + mint position
         );
 
-        bool success = exec(
-            _baal.multisendLibrary(),
-            0,
-            multisendTxs,
-            Enum.Operation.DelegateCall
-        );
+        // ZodiacModuleShaman action: execute multiSend to
+        //  - wrap ETH collected in vault
+        //  - transfer WETH from vault to shaman
+        //  - call shaman.createPoolAndMintPosition
+        (bool success, bytes memory returnData) = _execMultiSendCall(multisendTxs);
 
-        require(success, "exec failed"); // TODO: custom error
+        if (!success) revert Yeet24ShamanModule__ExecutionFailed(returnData);
 
         executed = true;
 
         emit Executed(token, amounts[0], yeethBalance);
     }
 
-    // ADMIN FUNCTIONS
-
-    //
-
-    receive() external payable {}
+    // TODO: ADMIN FUNCTIONS
 }

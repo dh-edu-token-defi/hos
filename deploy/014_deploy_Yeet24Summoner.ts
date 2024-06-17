@@ -10,7 +10,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   console.log("deployer", deployer);
 
-  console.log("\nDeploying Yeet24ShamanModule factory on network:", network.name);
+  console.log("\nDeploying Yeet24Summoner on network:", network.name);
 
   const chainId = await getChainId();
   const setupAddresses = await getSetupAddresses(chainId, network, deployments);
@@ -29,12 +29,12 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const yeet24ShamanModule =
     network.name === "hardhat" ? (await deployments.get("Yeet24ShamanModule")).address : addresses.yeet24ShamanModule;
 
-  const yeeter = network.name === "hardhat" ? (await deployments.get("Yeeter")).address : addresses.yeeter;
+  const yeeter = network.name === "hardhat" ? (await deployments.get("EthYeeter")).address : addresses.yeeter;
 
   const sharesToken =
-    network.name === "hardhat" ? (await deployments.get("SharesToken")).address : addresses.sharesToken;
+    network.name === "hardhat" ? (await deployments.get("Shares")).address : addresses.sharesToken;
 
-  const lootToken = network.name === "hardhat" ? (await deployments.get("LootToken")).address : addresses.lootToken;
+  const lootToken = network.name === "hardhat" ? (await deployments.get("GovernorLoot")).address : addresses.lootToken;
 
   const hosSummonerDeployed = await deployments.deploy("Yeet24HOS", {
     contract: "Yeet24HOS",
@@ -48,6 +48,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           bvSummonerAddress,
           setupAddresses.moduleProxyFactory,
           [yeet24ShamanModule, yeeter, sharesToken, lootToken],
+          "DHYeet24ShamanSummoner.3"
         ],
       },
     },
