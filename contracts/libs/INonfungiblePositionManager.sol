@@ -16,6 +16,10 @@ interface INonfungiblePositionManager {
         uint256 deadline;
     }
 
+    function factory() external view returns (address);
+
+    function ownerOf(uint256 tokenId) external view returns (address);
+
     /// @notice Creates a new position wrapped in a NFT
     /// @dev Call this when the pool does exist and is initialized. Note that if the pool is created but not initialized
     /// a method does not exist, i.e. the pool is assumed to be initialized.
