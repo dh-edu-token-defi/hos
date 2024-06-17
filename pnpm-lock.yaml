@@ -28,9 +28,6 @@ dependencies:
   erc6551:
     specifier: ^0.3.1
     version: 0.3.1
-  hardhat-verify:
-    specifier: ^1.0.0
-    version: 1.0.0
   solady:
     specifier: ^0.0.207
     version: 0.0.207
@@ -3703,10 +3700,6 @@ packages:
     transitivePeerDependencies:
       - '@codechecks/client'
     dev: true
-
-  /hardhat-verify@1.0.0:
-    resolution: {integrity: sha512-mLCAVyXTz3M9mDDv8qDNsEQfiopURX/eAwpS6jXyqeCUUtgr1eeYfrzigeT/Hut6RO8d1CmUuW9BHvG8cEL1fg==}
-    dev: false
 
   /hardhat@2.22.3(ts-node@10.9.1)(typescript@4.9.3):
     resolution: {integrity: sha512-k8JV2ECWNchD6ahkg2BR5wKVxY0OiKot7fuxiIpRK0frRqyOljcR2vKwgWSLw6YIeDcNNA4xybj7Og7NSxr2hA==}
