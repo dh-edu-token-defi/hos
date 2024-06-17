@@ -1,10 +1,12 @@
+// NOTICE: hardhat-foundry must be disabled when running pnpm coverage
+// import "@nomicfoundation/hardhat-foundry";
+import "@nomicfoundation/hardhat-toolbox";
 import { config as dotenvConfig } from "dotenv";
+import "hardhat-contract-sizer";
+import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
-
-import "@nomicfoundation/hardhat-toolbox";
-import "hardhat-deploy";
 
 import "./tasks/accounts";
 // import "./tasks/greet";
@@ -28,34 +30,30 @@ const chainIds = {
   ganache: 1337,
   hardhat: 31337,
   mainnet: 1,
-  goerli: 5,
   sepolia: 11155111,
   gnosis: 100,
   "arbitrum-mainnet": 42161,
-  "arbitrum-goerli": 421613,
+  "arbitrum-sepolia": 421614,
   "optimism-mainnet": 10,
-  "optimism-goerli": 420,
+  "optimism-sepolia": 11155420,
   "polygon-mainnet": 137,
-  "polygon-mumbai": 80001,
 };
 
 const explorerApiKey = (networkName: keyof typeof chainIds) => {
   const fromEnv = () => {
     switch (networkName) {
       case "mainnet":
-      case "goerli":
       case "sepolia":
         return process.env.ETHERSCAN_APIKEY;
       case "gnosis":
         return process.env.GNOSISSCAN_APIKEY;
       case "polygon-mainnet":
-      case "polygon-mumbai":
         return process.env.POLYGONSCAN_APIKEY;
       case "optimism-mainnet":
-      case "optimism-goerli":
+      case "optimism-sepolia":
         return process.env.OPTIMISTICSCAN_APIKEY;
       case "arbitrum-mainnet":
-      case "arbitrum-goerli":
+      case "arbitrum-sepolia":
         return process.env.ARBISCAN_APIKEY;
       default:
         break;
@@ -68,17 +66,14 @@ const getNodeURI = (networkName: keyof typeof chainIds) => {
   switch (networkName) {
     case "arbitrum-mainnet":
       return "https://rpc.ankr.com/arbitrum";
-    case "arbitrum-goerli":
-      return "https://goerli-rollup.arbitrum.io/rpc";
-    // return "https://arbitrum-goerli.publicnode.com";
+    case "arbitrum-sepolia":
+      return "https://sepolia-rollup.arbitrum.io/rpc";
     case "optimism-mainnet":
       return "https://rpc.ankr.com/optimism";
-    case "optimism-goerli":
-      return "https://goerli.optimism.io";
+    case "optimism-sepolia":
+      return "https://sepolia.optimism.io";
     case "polygon-mainnet":
       return "https://rpc.ankr.com/polygon";
-    case "polygon-mumbai":
-      return "https://rpc.ankr.com/polygon_mumbai";
     case "gnosis":
       return "https://rpc.gnosischain.com";
     default:
@@ -123,21 +118,30 @@ const config: HardhatUserConfig = {
         mnemonic,
       },
       chainId: chainIds.hardhat,
+      forking: process.env.HARDHAT_FORK_NETWORK
+        ? {
+            url: getNodeURI(process.env.HARDHAT_FORK_NETWORK as keyof typeof chainIds),
+            blockNumber: process.env.HARDHAT_FORK_BLOCKNUMBER
+              ? parseInt(process.env.HARDHAT_FORK_BLOCKNUMBER)
+              : undefined,
+          }
+        : undefined,
+      initialDate: "2024-06-01T00:00:00.000-05:00",
     },
-    ganache: {
-      accounts: {
-        mnemonic,
-      },
-      chainId: chainIds.ganache,
-      url: "http://localhost:8545",
-    },
+    // ganache: {
+    //   accounts: {
+    //     mnemonic,
+    //   },
+    //   chainId: chainIds.ganache,
+    //   url: "http://localhost:8545",
+    // },
     arbitrum: getChainConfig("arbitrum-mainnet"),
+    arbitrumSepolia: getChainConfig("arbitrum-sepolia"),
     mainnet: getChainConfig("mainnet"),
-    goerli: getChainConfig("goerli"),
     sepolia: getChainConfig("sepolia"),
     optimism: getChainConfig("optimism-mainnet"),
+    optimismSepolia: getChainConfig("optimism-sepolia"),
     "polygon-mainnet": getChainConfig("polygon-mainnet"),
-    "polygon-mumbai": getChainConfig("polygon-mumbai"),
   },
   paths: {
     artifacts: "./artifacts",
@@ -145,6 +149,13 @@ const config: HardhatUserConfig = {
     sources: "./contracts",
     tests: "./test",
   },
+  // contractSizer: {
+  //   alphaSort: true,
+  //   disambiguatePaths: false,
+  //   runOnCompile: true,
+  //   strict: false,
+  //   only: ["Yeet24HOS", "Yeet24ShamanModule", "EthYeeter"],
+  // },
   solidity: {
     compilers: [
       {

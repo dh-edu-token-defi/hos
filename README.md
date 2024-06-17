@@ -213,6 +213,12 @@ Delete the smart contract artifacts, the coverage reports and the Hardhat cache:
 $ pnpm clean
 ```
 
+### Local Deployment
+
+```sh
+$ pnpm hardhat deploy --tags Infra,BaalSummoner,BaalAndVaultSummoner,GovernorLoot,Yeeter2,Yeet24ShamanModule,Yeet24HOS
+```
+
 ### Deploy
 
 Deploy the contracts to Hardhat Network:
