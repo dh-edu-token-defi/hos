@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.8.7 <0.9.0;
 
+import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import { MultiSend } from "@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol";
 import { IAvatar } from "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
 
 import { ShamanBase } from "./ShamanBase.sol";
@@ -44,5 +46,20 @@ abstract contract ZodiacModuleShaman is ZodiacModule, ShamanBase {
 
     function moduleEnabled() public view override returns (bool) {
         return IAvatar(vault()).isModuleEnabled(address(this));
+    }
+
+    function encodeMultiSendAction(Enum.Operation _operation, address _to, uint256 _value, bytes memory _callData) public pure returns (bytes memory) {
+        return abi.encodePacked(_operation, _to, _value, _callData.length, _callData);
+    }
+
+    function _execMultiSendCall(bytes memory _transactions) internal returns (bool success, bytes memory returnData) {
+        bytes memory multiSendCalldata = abi.encodeCall(MultiSend.multiSend, (_transactions));
+
+        (success, returnData) = execAndReturnData(
+            _baal.multisendLibrary(),
+            0,
+            multiSendCalldata,
+            Enum.Operation.DelegateCall
+        );
     }
 }

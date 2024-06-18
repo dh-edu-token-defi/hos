@@ -11,8 +11,9 @@ interface IYeet24Shaman {
     function nonfungiblePositionManager() external view returns (INonfungiblePositionManager);
     function weth() external view returns (IWETH9);
 
-    function threshold() external view returns (uint256);
-    function expiration() external view returns (uint256);
+    function goal() external view returns (uint256);
+    function goalAchieved() external view returns (bool);
+    function endTime() external view returns (uint256);
     function poolFee() external view returns (uint24);
 
     function pool() external view returns (address);
