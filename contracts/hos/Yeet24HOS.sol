@@ -14,20 +14,23 @@ import { IBaalGovToken } from "../interfaces/IBaalGovToken.sol";
 
 // import "hardhat/console.sol";
 
+error Yeet24HOS__ParamSizeMismatch();
+
 contract Yeet24HOS is HOSBase {
     IBaalAndVaultSummoner public baalVaultSummoner;
 
     function initialize(
         address _baalVaultSummoner,
         address _moduleProxyFactory,
-        address[] memory _allowlistTemplates
+        address[] memory _allowlistTemplates,
+        string memory _referrerId
     ) public override {
         // baalAndVaultSummoner
         require(_baalVaultSummoner != address(0), "zero address");
         baalVaultSummoner = IBaalAndVaultSummoner(_baalVaultSummoner); //vault summoner
         // standard baalSummoner
         address baalSummoner = baalVaultSummoner._baalSummoner();
-        super.initialize(baalSummoner, _moduleProxyFactory, _allowlistTemplates);
+        super.initialize(baalSummoner, _moduleProxyFactory, _allowlistTemplates, _referrerId);
         emit SetSummoner(_baalVaultSummoner);
     }
 
@@ -58,7 +61,7 @@ contract Yeet24HOS is HOSBase {
             ),
             postInitActions,
             saltNonce, // salt nonce
-            bytes32(bytes("DHYeet24ShamanSummoner")), // referrer
+            referrerId, // referrer e.g. "DHYeet24ShamanSummoner.3"
             string.concat(IBaalFixedToken(lootToken).symbol(), " ", "Vault") // name
         );
     }
@@ -107,7 +110,6 @@ contract Yeet24HOS is HOSBase {
      * @param initializationShamanParams shaman init params
      * @param shamans IShamans
      * @param baal address
-     * @param vault address
      */
     function postDeployShamanActions(
         bytes calldata initializationShamanParams,
@@ -115,18 +117,17 @@ contract Yeet24HOS is HOSBase {
         address /*sharesToken*/,
         address[] memory shamans,
         address baal,
-        address vault
+        address /*vault*/
     ) internal override {
-        // init shaman here
-        // TODO: mismatch length check, it is not checking the length of initializationShamanParams
-        // against the length of shamans
-        // TODO: no need to check lengths if calling deployShamans prior to this function is assured
+        uint256 totalParams = shamans.length;
         (, , bytes[] memory initShamanDeployParams) = abi.decode(
             initializationShamanParams,
             (address, uint256, bytes[])
         );
+        if (initShamanDeployParams.length != totalParams) revert Yeet24HOS__ParamSizeMismatch();
+        address vault = IBaal(baal).avatar(); // fetch baal main treasury
         // shaman setup with dao address, vault address and initShamanParams
-        for (uint256 i; i < shamans.length;) {
+        for (uint256 i; i < totalParams;) {
             IShaman(shamans[i]).setup(baal, vault, initShamanDeployParams[i]);
             unchecked {
                 ++i;

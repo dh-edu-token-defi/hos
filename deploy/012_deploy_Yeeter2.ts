@@ -5,11 +5,11 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, network } = hre;
   const { deployer } = await hre.getNamedAccounts();
 
-  console.log("\nDeploying Yeet24ShamanModule singleton on network:", network.name);
+  console.log("\nDeploying Yeeter2 singleton on network:", network.name);
   console.log("\nDeploying from address", deployer);
 
-  const yeet24Deployed = await deployments.deploy("Yeet24ShamanModule", {
-    contract: "Yeet24ShamanModule",
+  const yeeterDeployed = await deployments.deploy("EthYeeter", {
+    contract: "EthYeeter",
     from: deployer,
     args: [],
     // proxy: {
@@ -18,9 +18,9 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // },
     log: true,
   });
-  console.log("Yeet24ShamanModule deployment Tx ->", yeet24Deployed.transactionHash);
+  console.log("EthYeeter deployment Tx ->", yeeterDeployed.transactionHash);
 };
 
 export default deployFn;
-deployFn.id = "013_deploy_Yeet24ShamanModule"; // id required to prevent reexecution
-deployFn.tags = ["Yeet24ShamanModule"];
+deployFn.id = "012_deploy_Yeeter2"; // id required to prevent reexecution
+deployFn.tags = ["Yeeter2"];
