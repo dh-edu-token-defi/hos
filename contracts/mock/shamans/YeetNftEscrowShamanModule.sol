@@ -110,7 +110,7 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
         // AdminShaman action: Make shares/loot transferable
         _baal.setAdminConfig(false, false);
 
-        bool success = exec(seller, yeethBalance, "", Enum.Operation.Call);
+        bool success = exec(seller, yeethBalance, new bytes(0), Enum.Operation.Call);
 
         require(success, "transfer failed"); // TODO: custom error
 
