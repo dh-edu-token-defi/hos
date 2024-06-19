@@ -1,8 +1,13 @@
+<<<<<<< HEAD
+import "@nomicfoundation/hardhat-toolbox";
+import { config as dotenvConfig } from "dotenv";
+=======
 // NOTICE: hardhat-foundry must be disabled when running pnpm coverage
 // import "@nomicfoundation/hardhat-foundry";
 import "@nomicfoundation/hardhat-toolbox";
 import { config as dotenvConfig } from "dotenv";
 import "hardhat-contract-sizer";
+>>>>>>> main
 import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
