@@ -22,5 +22,5 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 export default deployFn;
-deployFn.id = "016_deploy_YeetNftEscrowShamanModule"; // id required to prevent reexecution
+deployFn.id = "015_deploy_YeetNftEscrowShamanModule"; // id required to prevent reexecution
 deployFn.tags = ["YeetNftEscrowShamanModule"];

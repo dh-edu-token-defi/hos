@@ -94,7 +94,7 @@ contract YeetNftEscrowShamanModule is IYeetNftEscrowShaman, ZodiacModuleShaman, 
     function execute() public nonReentrant notExecuted isModuleEnabled isBaalAdmin {
         require(block.timestamp >= expiration, "!expired"); // TODO: custom error
 
-        uint256 yeethBalance = _baal.target().balance;
+        uint256 yeethBalance = vault().balance;
 
         require(yeethBalance >= threshold, "threshold not met"); // TODO: custom error
         require(isActive == true, "No longer active"); // TODO: custom error

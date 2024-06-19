@@ -10,7 +10,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   console.log("deployer", deployer);
 
-  console.log("\nDeploying YeetNftEscrowShamanModule factory on network:", network.name);
+  console.log("\nDeploying YeetNftEscrowSummoner factory on network:", network.name);
 
   const chainId = await getChainId();
   const setupAddresses = await getSetupAddresses(chainId, network, deployments);
@@ -31,12 +31,12 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       ? (await deployments.get("YeetNftEscrowShamanModule")).address
       : addresses.yeetNftEscrowShamanModule;
 
-  const yeeter2 = network.name === "hardhat" ? (await deployments.get("Yeeter2")).address : addresses.yeeter2;
+  const yeeter2 = network.name === "hardhat" ? (await deployments.get("EthYeeter")).address : addresses.yeeter2;
 
   const sharesToken =
-    network.name === "hardhat" ? (await deployments.get("SharesToken")).address : addresses.sharesToken;
+    network.name === "hardhat" ? (await deployments.get("Shares")).address : addresses.sharesToken;
 
-  const lootToken = network.name === "hardhat" ? (await deployments.get("LootToken")).address : addresses.lootToken;
+  const lootToken = network.name === "hardhat" ? (await deployments.get("Loot")).address : addresses.lootToken;
 
   const hosSummonerDeployed = await deployments.deploy("Yeet24HOS", {
     contract: "Yeet24HOS",
@@ -72,5 +72,5 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 export default deployFn;
-deployFn.id = "014_deploy_YeetNftEscrowHOS"; // id required to prevent reexecution
+deployFn.id = "016_deploy_YeetNftEscrowHOS"; // id required to prevent reexecution
 deployFn.tags = ["Factories", "YeetNftEscrowHOS"];
