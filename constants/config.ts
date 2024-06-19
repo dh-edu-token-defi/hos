@@ -7,8 +7,8 @@ type Contracts = {
   yeeter?: string;
   sharesToken?: string;
   lootToken?: string;
-  univ3NftPositionManager: string;
-  weth: string;
+  univ3NftPositionManager?: string;
+  weth?: string;
 };
 
 type Ownable = {
