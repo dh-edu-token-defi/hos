@@ -1,7 +1,10 @@
 import { deployments } from "hardhat";
 import { Deployment, ProxyOptions } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { GnosisSafe, GnosisSafeProxyFactory, MultiSend, ShamanBase } from "../types";
+import { DEPLOYMENT_ADDRESSES, getSetupAddresses, Loot, Poster, Shares } from "@daohaus/baal-contracts";
+
+import { CompatibilityFallbackHandler, GnosisSafe, GnosisSafeProxyFactory, MultiSend, ShamanBase } from "../types";
+import { getNetworkConfig } from "./utils";
 
 export type ContractSetup = {
   contract: string;
@@ -21,18 +24,29 @@ export type User = {
   address: string;
 };
 
+export type BaalInfra = {
+  lootSingleton: Loot;
+  poster: Poster;
+  sharesSingleton: Shares;
+  // tributeMinion: TributeMinion;
+};
+
+export type SafeInfra = {
+  fallbackHandler: CompatibilityFallbackHandler;
+  safeProxyFactory: GnosisSafeProxyFactory;
+  masterCopy: GnosisSafe;
+  multisend: MultiSend;
+};
+
 export type NetworkRegistryProps = {
+  baalContracts: BaalInfra;
   deployedFromFixtures: {
     [name: string]: Deployment
-  },
-  safe: {
-    safeProxyFactory: GnosisSafeProxyFactory;
-    masterCopy: GnosisSafe;
-    multisend: MultiSend;
-  }
+  };
+  safe: SafeInfra;
   shamans: {
     [name: string]: ShamanBase;
-  }
+  };
 };
 
 export type ShamanSetup = NetworkRegistryProps & {
@@ -43,9 +57,14 @@ export type ShamanSetup = NetworkRegistryProps & {
 
 export const shamanFixture = deployments.createFixture<ShamanSetup, Opts>(
   async (hre: HardhatRuntimeEnvironment, opts?: Opts) => {
-    const { ethers, getNamedAccounts, getUnnamedAccounts } = hre;
+    const { ethers, getChainId, getNamedAccounts, getUnnamedAccounts, network } = hre;
     const { deployer } = await getNamedAccounts();
     const [applicant, alice, bob, hausEcoFund, yeeterTeam] = await getUnnamedAccounts();
+
+    const chainId = await getChainId();
+
+    const networkConfig = getNetworkConfig();
+    // console.log("NETWORK ******", network.name, networkConfig.forking?.enabled);
 
     const signer = await ethers.getSigner(deployer);
 
@@ -58,12 +77,44 @@ export const shamanFixture = deployments.createFixture<ShamanSetup, Opts>(
     }
     //////////////
 
+    const forkedNetwork = network.name === "buildbear" || networkConfig.forking?.enabled;
+
+    // Get setup addresses
+    // NOTICE: default to Optimism private fork
+    const setupChainId = forkedNetwork ? "10" : chainId;
+    const setupAddresses = await getSetupAddresses(
+      setupChainId,
+      {
+        ...network,
+        name: forkedNetwork ? "forked" : network.name,
+      },
+      deployments
+    );
+
     // Get Safe infra
-    const safe = {
-      safeProxyFactory: (await ethers.getContract("GnosisSafeProxyFactory", deployer)) as GnosisSafeProxyFactory,
-      masterCopy: (await ethers.getContract("GnosisSafe", deployer)) as GnosisSafe,
-      multisend: (await ethers.getContract("MultiSend", deployer)) as MultiSend,
+    let safe: SafeInfra = {
+      fallbackHandler: (await ethers.getContractAt("CompatibilityFallbackHandler", setupAddresses.gnosisFallbackLibrary, deployer)) as CompatibilityFallbackHandler,
+      safeProxyFactory: (await ethers.getContractAt("GnosisSafeProxyFactory", setupAddresses.gnosisSafeProxyFactory, deployer)) as GnosisSafeProxyFactory,
+      masterCopy: (await ethers.getContractAt("GnosisSafe", setupAddresses.gnosisSingleton, deployer)) as GnosisSafe,
+      multisend: (await ethers.getContractAt("MultiSend", setupAddresses.gnosisMultisendLibrary, deployer)) as MultiSend,
     };
+
+    let baalContracts: BaalInfra;
+    if (forkedNetwork) {
+      // NOTICE: default to Optimism private fork
+      const baalSetupAddresses = DEPLOYMENT_ADDRESSES[0].v103.optimisticEthereum;
+      baalContracts = {
+        lootSingleton: (await ethers.getContractAt("Loot", baalSetupAddresses.addresses.lootSingleton, deployer)) as Loot,
+        poster: (await ethers.getContractAt("Poster", setupAddresses.poster, deployer)) as Poster,
+        sharesSingleton: (await ethers.getContractAt("Shares", baalSetupAddresses.addresses.sharesSingleton, deployer)) as Shares,
+      };
+    } else {
+      baalContracts = {
+        lootSingleton: (await ethers.getContract("Loot", deployer)) as Loot,
+        poster: (await ethers.getContractAt("Poster", setupAddresses.poster, deployer)) as Poster,
+        sharesSingleton: (await ethers.getContract("Shares", deployer)) as Shares,
+      };
+    }
 
     let shamans: {
       [name: string]: ShamanBase;
@@ -79,6 +130,7 @@ export const shamanFixture = deployments.createFixture<ShamanSetup, Opts>(
     }
 
     return {
+      baalContracts,
       deployedFromFixtures,
       safe,
       shamans,

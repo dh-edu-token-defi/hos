@@ -10,6 +10,8 @@ interface IYeet24Shaman {
     function executed() external view returns (bool);
     function nonfungiblePositionManager() external view returns (INonfungiblePositionManager);
     function weth() external view returns (IWETH9);
+    function boostRewardsPool() external view returns (address payable);
+    function updateBoostRewardsPool(address _boostRewardsPool) external;
 
     function goal() external view returns (uint256);
     function goalAchieved() external view returns (bool);
@@ -25,4 +27,6 @@ interface IYeet24Shaman {
         uint256 liquidityAmount0,
         uint256 liquidityAmount1
     ) external;
+
+    function withdrawShamanBalance() external;
 }

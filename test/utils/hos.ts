@@ -1,8 +1,7 @@
 import { ethers } from "hardhat";
 import { BigNumberish } from "ethers";
 import { encodeValues } from "./index";
-import { Baal, Poster } from "@daohaus/baal-contracts";
-import { GnosisSafe, Yeet24HOS } from "../../types";
+import { Yeet24HOS } from "../../types";
 
 export type MetadataConfigParams = {
   name: string;
@@ -124,8 +123,10 @@ export const governanceConfigTX = async ({
       minRetention,
     ]
   );
-  const baal = (await ethers.getContract("Baal")) as Baal;
-  return baal.interface.encodeFunctionData("setGovernanceConfig", [encodedValues]);
+  const baalIface = new ethers.utils.Interface([
+    "function setGovernanceConfig(bytes)"
+  ]);
+  return baalIface.encodeFunctionData("setGovernanceConfig", [encodedValues]);
 };
 
 export const metadataConfigTX = async ({
@@ -152,14 +153,18 @@ export const metadataConfigTX = async ({
     authorAddress,
   };
 
-  const poster = (await ethers.getContract("Poster")) as Poster;
-  const METADATA = poster.interface.encodeFunctionData("post", [
+  const posterIface = new ethers.utils.Interface([
+    "function post(string content, string tag)",
+  ]);
+  const METADATA = posterIface.encodeFunctionData("post", [
     JSON.stringify(content),
     "daohaus.summoner.daoProfile", // POSTER_TAGS.summoner,
   ])
 
-  const baal = (await ethers.getContract("Baal")) as Baal;
-  return baal.interface.encodeFunctionData("executeAsBaal", [
+  const baalIface = new ethers.utils.Interface([
+    "function executeAsBaal(address _to, uint256 _value, bytes _data)",
+  ]);
+  return baalIface.encodeFunctionData("executeAsBaal", [
     posterAddress,
     0,
     METADATA,
@@ -175,8 +180,10 @@ export const tokenConfigTX = async ({
   pauseVoteToken: boolean;
 
 }) => {
-  const baal = (await ethers.getContract("Baal")) as Baal;
-  return baal.interface.encodeFunctionData("setAdminConfig", [
+  const baalIface = new ethers.utils.Interface([
+    "function setAdminConfig(bool pauseShares, bool pauseLoot)",
+  ]);
+  return baalIface.encodeFunctionData("setAdminConfig", [
     pauseVoteToken,
     pauseNvToken,
   ]);
@@ -189,11 +196,13 @@ export const shamanZodiacModuleConfigTX = async ({
   avatarAddress: `0x${string}`;
   shamanZodiacModuleAddress: `0x${string}`;
 }) => {
-
-  const safe = (await ethers.getContract("GnosisSafe")) as GnosisSafe;
-  const ADD_MODULE = safe.interface.encodeFunctionData("enableModule", [shamanZodiacModuleAddress]);
+  const safeIface = new ethers.utils.Interface([
+    "function enableModule(address module)",
+    "function execTransactionFromModule(address to, uint256 value, bytes memory data, uint8 operation)",
+  ]);
+  const ADD_MODULE = safeIface.encodeFunctionData("enableModule", [shamanZodiacModuleAddress]);
   
-  const EXEC_TX_FROM_MODULE = safe.interface.encodeFunctionData(
+  const EXEC_TX_FROM_MODULE = safeIface.encodeFunctionData(
     "execTransactionFromModule",
     [
       avatarAddress, // to
@@ -203,8 +212,10 @@ export const shamanZodiacModuleConfigTX = async ({
     ],
   );
 
-  const baal = (await ethers.getContract("Baal")) as Baal;
-  return baal.interface.encodeFunctionData("executeAsBaal", [
+  const baalIface = new ethers.utils.Interface([
+    "function executeAsBaal(address _to, uint256 _value, bytes _data)",
+  ]);
+  return baalIface.encodeFunctionData("executeAsBaal", [
     avatarAddress,
     0,
     EXEC_TX_FROM_MODULE,
