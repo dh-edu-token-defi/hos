@@ -20,9 +20,12 @@ import {
 
 import { WETH } from "../../types";
 import { deploymentConfig } from "../../constants";
+import { getNetworkConfig } from ".";
 
 export const deployUniV3Infra = async () => {
-  const chainId = await getChainId();
+  const networkConfig = getNetworkConfig();
+  const forkedNetwork = network.name === 'buildbear' || networkConfig.forking?.enabled;
+  const chainId =  forkedNetwork ? "10" : await getChainId();
   const { deployer } = await getNamedAccounts();
 
   const addresses = deploymentConfig[chainId];
@@ -31,7 +34,7 @@ export const deployUniV3Infra = async () => {
 
   // console.log("Getting UniV3 contracts for network:", network.name);
 
-  if (network.name === 'hardhat') {
+  if (network.name === 'hardhat' && !forkedNetwork) {
     const wethDeployed = await deployments.deploy("WETH", {
       contract: "WETH",
 
@@ -75,8 +78,10 @@ export const deployUniV3Infra = async () => {
       WETH,
     };
   }
+  if (!addresses.univ3NftPositionManager || !addresses.weth)
+      throw new Error(`Missing UniV3 and WETH setup addresses for network: ${network.name}`);
   return {
-    nftpManager: await ethers.getContractAt("INonfungiblePositionManager", addresses.weth, signer),
+    nftpManager: await ethers.getContractAt("INonfungiblePositionManager", addresses.univ3NftPositionManager, signer),
     WETH: (await ethers.getContractAt("WETH", addresses.weth, signer)) as WETH,
   }
 };
