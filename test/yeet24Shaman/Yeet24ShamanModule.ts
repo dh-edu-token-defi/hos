@@ -1023,21 +1023,8 @@ describe("Yeet24ShamanModule", function () {
         )
       ).to.be.revertedWithCustomError(yeet24Shaman, "Yeet24ShamanModule__BaalVaultOnly");
       await expect(
-        yeet24Shaman.updateBoostRewardsPool(boostRewardsPoolSafe.address)
-      ).to.be.revertedWithCustomError(yeet24Shaman, "Yeet24ShamanModule__BaalVaultOnly");
-      await expect(
         yeet24Shaman.withdrawShamanBalance()
       ).to.be.revertedWithCustomError(yeet24Shaman, "Yeet24ShamanModule__BaalVaultOnly");
-    });
-
-    it("Should be able to update boostRewardsPool address through vault", async () => {
-      await setBalance(avatar.address, ethers.utils.parseEther("1"));
-      await impersonateAccount(avatar.address);
-      const signer = await ethers.getSigner(avatar.address);
-      const tx = await yeet24Shaman.connect(signer).updateBoostRewardsPool(boostRewardsPoolSafe.address);
-      await expect(tx).to.emit(yeet24Shaman, "BoostRewardsPoolUpdated").withArgs(boostRewardsPoolSafe.address);
-      expect(await yeet24Shaman.boostRewardsPool()).to.be.equal(boostRewardsPoolSafe.address);
-      await stopImpersonatingAccount(avatar.address);
     });
 
     it("Should accept yeets during active period", async () => {

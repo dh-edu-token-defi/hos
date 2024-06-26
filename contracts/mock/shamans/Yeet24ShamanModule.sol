@@ -51,7 +51,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
     bool internal success;
 
     event Setup(address indexed baal, address indexed vault, uint256 goal, uint256 endTime, uint256 poolFee, address boostRewardsPool);
-    event BoostRewardsPoolUpdated(address boostRewardsPool);
     event ExecutionFailed(uint256 yeethBalance, uint256 boostRewards, bool forwardedToRewardsPool);
     event Executed(address indexed token, uint256 tokenSupply, uint256 ethSupply, uint256 boostRewards);
     event UniswapPositionCreated(address indexed pool, uint256 indexed positionId, uint160 sqrtPriceX96, uint128 liquidity, uint256 amount0, uint256 amount1);
@@ -293,11 +292,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
 
             emit Executed(token, amounts[0], yeethBalance, boostRewards);
         }
-    }
-
-    function updateBoostRewardsPool(address _boostRewardsPool) external baalVaultOnly {
-        boostRewardsPool = payable(_boostRewardsPool);
-        emit BoostRewardsPoolUpdated(_boostRewardsPool);
     }
 
     function withdrawShamanBalance() external baalVaultOnly {
