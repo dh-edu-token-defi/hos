@@ -35,6 +35,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
 
     address public pool;
     uint256 public positionId;
+    uint256 public balance;
 
     uint256 public endTime;
     uint256 public goal;
@@ -287,6 +288,8 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             (bool multiSendSuccess, bytes memory returnData) = _execMultiSendCall(multisendTxs);
 
             if (!multiSendSuccess) revert Yeet24ShamanModule__ExecutionFailed(returnData);
+
+            balance = yeethBalance;
 
             emit Executed(token, amounts[0], yeethBalance, boostRewards);
         }

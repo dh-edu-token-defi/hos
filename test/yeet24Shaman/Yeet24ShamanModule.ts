@@ -1102,6 +1102,7 @@ describe("Yeet24ShamanModule", function () {
       await expect(tx).to.emit(yeet24Shaman, "ExecutionFailed").withArgs(currentYeetBalance, currentYeet24Balance, transferSuccess);
       expect(await yeet24Shaman.executed()).to.be.true;
       expect(await yeet24Shaman.goalAchieved()).to.be.false;
+      expect(await yeet24Shaman.balance()).to.be.equal(0);
     });
 
     it("Should not be able to withdraw any balance if it has not been executed", async () => {
@@ -1276,6 +1277,7 @@ describe("Yeet24ShamanModule", function () {
       expect(await yeet24Shaman.executed()).to.be.true;
       expect(await yeet24Shaman.goalAchieved()).to.be.true;
       expect(await yeet24Shaman.pool()).to.not.be.equal(ethers.constants.AddressZero);
+      expect(await yeet24Shaman.balance()).to.be.equal(collectedAmount);
       const positionId = await yeet24Shaman.positionId();
       expect(positionId).to.be.gt(0);
       // TODO: check token refunds after position is minted
@@ -1487,6 +1489,7 @@ describe("Yeet24ShamanModule", function () {
       await expect(tx).to.emit(yeet24Shaman, "ExecutionFailed").withArgs(receivedAmount, boostRewardsFromFees, true);
       expect(await yeet24Shaman.executed()).to.be.true;
       expect(await yeet24Shaman.goalAchieved()).to.be.false;
+      expect(await yeet24Shaman.balance()).to.be.equal(0);
       expect(
         await ethers.provider.getBalance(boostRewardsPoolSafe.address)
       ).to.be.equal(rewardsPoolBalanceBefore.add(boostRewardsFromFees));
@@ -1598,6 +1601,7 @@ describe("Yeet24ShamanModule", function () {
       expect(await yeet24Shaman.executed()).to.be.true;
       expect(await yeet24Shaman.goalAchieved()).to.be.true;
       expect(await yeet24Shaman.pool()).to.not.be.equal(ethers.constants.AddressZero);
+      expect(await yeet24Shaman.balance()).to.be.equal(receivedAmount);
       const positionId = await yeet24Shaman.positionId();
       expect(positionId).to.be.gt(0);
       // TODO: check token refunds after position is minted

@@ -20,6 +20,7 @@ interface IYeet24Shaman {
 
     function pool() external view returns (address);
     function positionId() external view returns (uint256);
+    function balance() external view returns (uint256);
 
     function createPoolAndMintPosition(
         address token0,
