@@ -1,40 +1,64 @@
-import { getSetupAddresses } from "@daohaus/baal-contracts";
+import { BaalAndVaultSummoner, BaalSummoner, getSetupAddresses } from "@daohaus/baal-contracts";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { deploymentConfig } from "../constants";
+import { getNetworkConfig } from "../test/utils";
 
 const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  const { getChainId, deployments, network } = hre;
+  const { getChainId, deployments, ethers, network } = hre;
   const { deployer } = await hre.getNamedAccounts();
 
   console.log("deployer", deployer);
 
-  console.log("\nDeploying Yeet24Summoner on network:", network.name);
+  const networkConfig = getNetworkConfig();
 
-  const chainId = await getChainId();
-  const setupAddresses = await getSetupAddresses(chainId, network, deployments);
+  console.log("\nDeploying Yeet24Summoner on network:", network.name, "forked?", !!networkConfig.forking?.enabled);
+
+  const forkedNetwork = network.name === "buildbear" || networkConfig.forking?.enabled;
+  // NOTICE: default to Optimism private fork
+  const chainId = forkedNetwork ? "10" : await getChainId();
+  const setupAddresses = await getSetupAddresses(
+    chainId,
+    {
+      ...network,
+      name: forkedNetwork ? "forked" : network.name,
+    },
+    deployments
+  );
   console.log("setupAddresses", setupAddresses);
   const addresses = deploymentConfig[chainId];
 
-  if (network.name !== "hardhat") {
+  if (forkedNetwork) {
     if (!addresses?.baalSummoner) throw Error("No address found for BaalSummoner");
-    console.log(`Re-using contracts on ${network.name}:`);
-    console.log("BaalSummoner", addresses.baalSummoner);
+    console.log(`Re-using contracts on ${network.name}:${chainId}`);
   }
 
+  const testNetworks = ["buildbear", "hardhat"];
+
   const bvSummonerAddress =
-    network.name === "hardhat" ? (await deployments.get("BaalAndVaultSummoner")).address : addresses.bvSummoner;
+    network.name === "hardhat" && !forkedNetwork ? (await deployments.get("BaalAndVaultSummoner")).address : addresses.bvSummoner;
+
+  const bvSummoner = (await ethers.getContractAt("BaalAndVaultSummoner", bvSummonerAddress, deployer)) as BaalAndVaultSummoner;
+  const baalSummoner = (await ethers.getContractAt("BaalSummoner", await bvSummoner._baalSummoner(), deployer)) as BaalSummoner;
+
+  // NOTICE: Need to fetch moduleProxyFactory from summoner as setupAddresses currently differ in a few networks (e.g. optimisms)
+  const currentModuleProxyFactoryAddress = ethers.utils.getAddress(
+    (await ethers.provider.getStorageAt(baalSummoner.address, "0xd1")).substring(26)
+  );
+  const moduleProxyFactoryAddress = currentModuleProxyFactoryAddress !== ethers.constants.AddressZero
+    ? currentModuleProxyFactoryAddress
+    : setupAddresses.moduleProxyFactory;
 
   const yeet24ShamanModule =
-    network.name === "hardhat" ? (await deployments.get("Yeet24ShamanModule")).address : addresses.yeet24ShamanModule;
+    testNetworks.includes(network.name) ? (await deployments.get("Yeet24ShamanModule")).address : addresses.yeet24ShamanModule;
 
-  const yeeter = network.name === "hardhat" ? (await deployments.get("EthYeeter")).address : addresses.yeeter;
+  const yeeter = testNetworks.includes(network.name) ? (await deployments.get("EthYeeter")).address : addresses.yeeter;
 
   const sharesToken =
-    network.name === "hardhat" ? (await deployments.get("Shares")).address : addresses.sharesToken;
+    network.name === "hardhat" && !forkedNetwork ? (await deployments.get("Shares")).address : addresses.sharesToken;
 
-  const lootToken = network.name === "hardhat" ? (await deployments.get("GovernorLoot")).address : addresses.lootToken;
+  const lootToken = testNetworks.includes(network.name) ? (await deployments.get("GovernorLoot")).address : addresses.lootToken;
 
   const hosSummonerDeployed = await deployments.deploy("Yeet24HOS", {
     contract: "Yeet24HOS",
@@ -46,7 +70,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         methodName: "initialize",
         args: [
           bvSummonerAddress,
-          setupAddresses.moduleProxyFactory,
+          moduleProxyFactoryAddress,
           [yeet24ShamanModule, yeeter, sharesToken, lootToken],
           "DHYeet24ShamanSummoner.3"
         ],
@@ -56,7 +80,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   });
   console.log("Yeet24HOS deployment Tx ->", hosSummonerDeployed.transactionHash);
 
-  if (network.name !== "hardhat" && addresses?.owner && addresses.owner !== deployer) {
+  if (!testNetworks.includes(network.name) && addresses?.owner && addresses.owner !== deployer) {
     console.log("Yeet24HOS transferOwnership to", addresses.owner);
     const tx = await deployments.execute(
       "Yeet24HOS",

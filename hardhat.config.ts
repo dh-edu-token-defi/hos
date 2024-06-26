@@ -20,6 +20,7 @@ const mnemonic: string = process.env.MNEMONIC || "";
 if (!mnemonic) {
   throw new Error("Please set your MNEMONIC in a .env file");
 }
+const mnemonicBuildBear = process.env.MNEMONIC_BUILDBEAR || mnemonic;
 
 const infuraApiKey: string | undefined = process.env.INFURA_API_KEY;
 if (!infuraApiKey) {
@@ -128,6 +129,12 @@ const config: HardhatUserConfig = {
         : undefined,
       initialDate: "2024-06-01T00:00:00.000-05:00",
     },
+    buildbear: {
+      url: "https://rpc.buildbear.io/desperate-katebishop-722b67d0",
+      accounts: {
+        mnemonic: mnemonicBuildBear,
+      },
+    },
     // ganache: {
     //   accounts: {
     //     mnemonic,
@@ -210,12 +217,16 @@ const config: HardhatUserConfig = {
       },
     ],
   },
+  mocha: {
+    timeout: 120000,
+  },
   typechain: {
     outDir: "types",
     target: "ethers-v5",
   },
   etherscan: {
     apiKey: {
+      buildbear: "verifyContract",
       mainnet: explorerApiKey("mainnet"),
       sepolia: explorerApiKey("sepolia"),
       optimisticEthereum: explorerApiKey("optimism-mainnet"),
@@ -224,6 +235,16 @@ const config: HardhatUserConfig = {
       // arbitrumSepolia: explorerApiKey("arbitrum-sepolia"),
       polygon: explorerApiKey("polygon-mainnet"),
     },
+    customChains: [
+      {
+        network: "buildbear",
+        chainId: 18229,
+        urls: {
+          apiURL: "https://rpc.buildbear.io/verify/etherscan/desperate-katebishop-722b67d0",
+          browserURL: "https://explorer.buildbear.io/desperate-katebishop-722b67d0",
+        },
+      },
+    ],
   },
   external: {
     contracts: [

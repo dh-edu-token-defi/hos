@@ -62,8 +62,12 @@ export const deploymentConfig: { [key: string]: Contracts & Ownable } = {
     bvSummoner: "0xb04111e7b4576164145EF97EB81fd43DA0F2D675",
     btSummoner: "0x84561C97156a128662B62952890469214FDC87bf",
     shares: "0x8124Cbb807A7b64123F3dEc3EF64995d8B10d3Eb",
+    yeet24ShamanModule: "",
+    yeeter: "",
+    sharesToken: "0x8124Cbb807A7b64123F3dEc3EF64995d8B10d3Eb",
+    lootToken: "",
     univ3NftPositionManager: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
-    weth: "",
+    weth: "0x4200000000000000000000000000000000000006",
     owner: "",
   },
   "80001": {

@@ -9,12 +9,14 @@ export type Yeet24Params = {
   goal: BigNumberish;
   nonFungiblePositionManager: `0x${string}`;
   poolFee: BigNumberish;
+  boostRewardsPoolAddress: `0x${string}`;
   weth9: `0${string}`;
 };
 
 export const YEET24_SHAMAN_PERMISSIONS = "3";
 
 export const assembleYeet24ShamanParams = ({
+  boostRewardsPoolAddress,
   endTimeInSeconds,
   goal,
   nonFungiblePositionManager,
@@ -27,10 +29,11 @@ export const assembleYeet24ShamanParams = ({
   // uint256 _expiration,
   // uint24 _poolFee
   return encodeValues(
-    ["address", "address", "uint256", "uint256", "uint24"],
+    ["address", "address", "address", "uint256", "uint256", "uint24"],
     [
       nonFungiblePositionManager,
       weth9,
+      boostRewardsPoolAddress,
       // DEFAULT_YEETER_VALUES.minThresholdGoal, // align with yeeter
       goal,
       // Number(endDateTime), // align with yeeter

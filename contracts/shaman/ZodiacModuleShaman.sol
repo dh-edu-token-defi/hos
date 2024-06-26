@@ -32,7 +32,7 @@ abstract contract ZodiacModuleShaman is ZodiacModule, ShamanBase {
 
     function setUp(bytes memory _initializeParams) public virtual override(ZodiacModule) onlyInitializing {
         super.setUp(_initializeParams);
-        transferOwnership(_vault);
+        transferOwnership(vault());
     }
 
     /**
