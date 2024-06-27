@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.7 < 0.9.0;
+pragma solidity >=0.8.7 <0.9.0;
 
 import { INonfungiblePositionManager } from "../libs/INonfungiblePositionManager.sol";
 import { IWETH9 } from "../libs/IWETH9.sol";
@@ -32,6 +32,7 @@ interface IYeet24Shaman {
      * @return true if shaman execute() function was called
      */
     function executed() external view returns (bool);
+
     /**
      * @dev UniswapV3 NonfungiblePositionManager contract
      * @return UniV3 NonfungiblePositionManager contact address

@@ -63,9 +63,7 @@ abstract contract ZodiacModuleShaman is ZodiacModule, ShamanBase {
      * @dev See {IERC165-supportsInterface}.
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ShamanBase) returns (bool) {
-        return
-            interfaceId == type(ZodiacModule).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(ZodiacModule).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**
@@ -83,7 +81,12 @@ abstract contract ZodiacModuleShaman is ZodiacModule, ShamanBase {
      * @param _value value to be sent
      * @param _callData calldata to be called on recipient
      */
-    function encodeMultiSendAction(Enum.Operation _operation, address _to, uint256 _value, bytes memory _callData) public pure returns (bytes memory) {
+    function encodeMultiSendAction(
+        Enum.Operation _operation,
+        address _to,
+        uint256 _value,
+        bytes memory _callData
+    ) public pure returns (bytes memory) {
         return abi.encodePacked(_operation, _to, _value, _callData.length, _callData);
     }
 

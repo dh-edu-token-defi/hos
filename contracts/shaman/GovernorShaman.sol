@@ -14,12 +14,11 @@ error GovernorShaman__NoGovernorRole();
  * @dev Inherits from ShamanBase
  */
 abstract contract GovernorShaman is ShamanBase, IGovernorShaman {
-
     /**
      * @notice A modifier for methods that require to check shaman governor privileges
      */
     modifier isBaalGovernor() {
-        if(!isGovernor()) revert GovernorShaman__NoGovernorRole();
+        if (!isGovernor()) revert GovernorShaman__NoGovernorRole();
         _;
     }
 
@@ -30,7 +29,11 @@ abstract contract GovernorShaman is ShamanBase, IGovernorShaman {
      * @param _baalAddress baal address
      * @param _vaultAddress baal vault address
      */
-    function __GovernorShaman_init(string memory _name, address _baalAddress, address _vaultAddress) internal onlyInitializing {
+    function __GovernorShaman_init(
+        string memory _name,
+        address _baalAddress,
+        address _vaultAddress
+    ) internal onlyInitializing {
         __ShamanBase_init(_name, _baalAddress, _vaultAddress);
         __GovernorShaman_init_unchained();
     }
@@ -39,15 +42,13 @@ abstract contract GovernorShaman is ShamanBase, IGovernorShaman {
      * @notice Local initializer function
      * @dev Should be called through main initializer to set any local state variables
      */
-    function __GovernorShaman_init_unchained() internal onlyInitializing { }
+    function __GovernorShaman_init_unchained() internal onlyInitializing {}
 
     /**
      * @dev See {IERC165-supportsInterface}.
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ShamanBase, IERC165) returns (bool) {
-        return
-            interfaceId == type(IGovernorShaman).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IGovernorShaman).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**

@@ -1,8 +1,23 @@
-import { ethers } from "hardhat";
 import { BigNumberish } from "ethers";
-import { TokenConfig, YEETER_SHAMAN_PERMISSIONS, YeeterParams, assembleYeeterShamanParams, encodeValues } from "../utils";
-import { MetadataConfigParams, SummonParams, assembleBaalInitActions, assembleLootTokenParams, assembleShamanParams, assembleShareTokenParams, shamanZodiacModuleConfigTX } from "../utils/hos";
+import { ethers } from "hardhat";
+
 import { Yeet24HOS } from "../../types";
+import {
+  TokenConfig,
+  YEETER_SHAMAN_PERMISSIONS,
+  YeeterParams,
+  assembleYeeterShamanParams,
+  encodeValues,
+} from "../utils";
+import {
+  MetadataConfigParams,
+  SummonParams,
+  assembleBaalInitActions,
+  assembleLootTokenParams,
+  assembleShamanParams,
+  assembleShareTokenParams,
+  shamanZodiacModuleConfigTX,
+} from "../utils/hos";
 
 export type Yeet24Params = {
   endTimeInSeconds: BigNumberish;
@@ -22,7 +37,7 @@ export const assembleYeet24ShamanParams = ({
   nonFungiblePositionManager,
   poolFee,
   weth9,
-} : Yeet24Params) => {
+}: Yeet24Params) => {
   // address _nftPositionManager,
   // address _weth9Address,
   // uint256 _threshold,
@@ -40,9 +55,9 @@ export const assembleYeet24ShamanParams = ({
       endTimeInSeconds,
       // DEFAULT_MEME_YEETER_VALUES.poolFee,
       poolFee,
-    ]
+    ],
   );
-}
+};
 
 export const assembleYeet24SummonerArgs = async ({
   avatarAddress,
@@ -57,7 +72,7 @@ export const assembleYeet24SummonerArgs = async ({
   yeet24Params,
   yeeterParams,
   yeeterSingleton,
-} : {
+}: {
   avatarAddress: string;
   daoName: string;
   lootConfig: TokenConfig;
@@ -87,7 +102,7 @@ export const assembleYeet24SummonerArgs = async ({
   const yeeterInitParams = assembleYeeterShamanParams(yeeterParams);
   const yeet24InitParams = assembleYeet24ShamanParams(yeet24Params);
   const initializationShamanParams = assembleShamanParams({
-    shamanSingletons: [yeet24Singleton , yeeterSingleton] as Array<`0x${string}`>,
+    shamanSingletons: [yeet24Singleton, yeeterSingleton] as Array<`0x${string}`>,
     shamanInitParams: [yeet24InitParams, yeeterInitParams],
     shamanPermissions: [YEET24_SHAMAN_PERMISSIONS, YEETER_SHAMAN_PERMISSIONS],
   });
@@ -110,10 +125,7 @@ export const assembleYeet24SummonerArgs = async ({
     initializationLootTokenParams,
     initializationSharesTokenParams,
     initializationShamanParams,
-    [
-      ...postInitializationActions,
-      yeet24ShamanEnableModule,
-    ],
+    [...postInitializationActions, yeet24ShamanEnableModule],
     saltNonce,
   ];
 };

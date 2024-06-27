@@ -15,7 +15,7 @@ abstract contract ZodiacModule is Module {
      * @dev Should use avatar to eval if contract is currently added as a module
      * @return whether or not the contract is enabled as a module
      */
-    function moduleEnabled() public virtual view returns (bool);
+    function moduleEnabled() public view virtual returns (bool);
 
     /**
      * @notice Initializer function

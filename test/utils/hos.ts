@@ -1,7 +1,8 @@
-import { ethers } from "hardhat";
 import { BigNumberish } from "ethers";
-import { encodeValues } from "./index";
+import { ethers } from "hardhat";
+
 import { Yeet24HOS } from "../../types";
+import { encodeValues } from "./index";
 
 export type MetadataConfigParams = {
   name: string;
@@ -49,20 +50,13 @@ export const DEFAULT_SUMMON_VALUES: SummonParams = {
 export const assembleLootTokenParams = ({
   daoName,
   lootSingleton,
-  tokenSymbol
+  tokenSymbol,
 }: {
   daoName: string;
   lootSingleton: `0x${string}`;
   tokenSymbol: string;
 }) => {
-
-  const lootParams = encodeValues(
-    ["string", "string"],
-    [
-      daoName,
-      tokenSymbol
-    ]
-  );
+  const lootParams = encodeValues(["string", "string"], [daoName, tokenSymbol]);
 
   return encodeValues(["address", "bytes"], [lootSingleton, lootParams]);
 };
@@ -76,15 +70,8 @@ export const assembleShareTokenParams = ({
   daoName: string;
   sharesSingleton: `0x${string}`;
   tokenSymbol: string;
-
 }) => {
-  const shareParams = encodeValues(
-    ["string", "string"],
-    [
-      daoName,
-      tokenSymbol
-    ]
-  );
+  const shareParams = encodeValues(["string", "string"], [daoName, tokenSymbol]);
 
   return encodeValues(["address", "bytes"], [sharesSingleton, shareParams]);
 };
@@ -98,10 +85,7 @@ export const assembleShamanParams = ({
   shamanPermissions: Array<BigNumberish>;
   shamanInitParams: Array<string>;
 }) => {
-  return encodeValues(
-    ["address[]", "uint256[]", "bytes[]"],
-    [shamanSingletons, shamanPermissions, shamanInitParams]
-  );
+  return encodeValues(["address[]", "uint256[]", "bytes[]"], [shamanSingletons, shamanPermissions, shamanInitParams]);
 };
 
 export const governanceConfigTX = async ({
@@ -114,18 +98,9 @@ export const governanceConfigTX = async ({
 }: SummonParams) => {
   const encodedValues = encodeValues(
     ["uint32", "uint32", "uint256", "uint256", "uint256", "uint256"],
-    [
-      votingPeriodInSeconds,
-      gracePeriodInSeconds,
-      newOffering,
-      quorum,
-      sponsorThreshold,
-      minRetention,
-    ]
+    [votingPeriodInSeconds, gracePeriodInSeconds, newOffering, quorum, sponsorThreshold, minRetention],
   );
-  const baalIface = new ethers.utils.Interface([
-    "function setGovernanceConfig(bytes)"
-  ]);
+  const baalIface = new ethers.utils.Interface(["function setGovernanceConfig(bytes)"]);
   return baalIface.encodeFunctionData("setGovernanceConfig", [encodedValues]);
 };
 
@@ -139,11 +114,11 @@ export const metadataConfigTX = async ({
   authorAddress,
   posterAddress,
 }: MetadataConfigParams) => {
-  const content = { 
+  const content = {
     name,
     daoId,
-    table: 'daoProfile', 
-    queryType: 'list',
+    table: "daoProfile",
+    queryType: "list",
     description,
     longDescription,
     avatarImg, // TODO: is this the right field?
@@ -153,46 +128,31 @@ export const metadataConfigTX = async ({
     authorAddress,
   };
 
-  const posterIface = new ethers.utils.Interface([
-    "function post(string content, string tag)",
-  ]);
+  const posterIface = new ethers.utils.Interface(["function post(string content, string tag)"]);
   const METADATA = posterIface.encodeFunctionData("post", [
     JSON.stringify(content),
     "daohaus.summoner.daoProfile", // POSTER_TAGS.summoner,
-  ])
+  ]);
 
-  const baalIface = new ethers.utils.Interface([
-    "function executeAsBaal(address _to, uint256 _value, bytes _data)",
-  ]);
-  return baalIface.encodeFunctionData("executeAsBaal", [
-    posterAddress,
-    0,
-    METADATA,
-  ]);
+  const baalIface = new ethers.utils.Interface(["function executeAsBaal(address _to, uint256 _value, bytes _data)"]);
+  return baalIface.encodeFunctionData("executeAsBaal", [posterAddress, 0, METADATA]);
 };
 
 export const tokenConfigTX = async ({
   pauseNvToken,
   pauseVoteToken,
-
-} : {
+}: {
   pauseNvToken: boolean;
   pauseVoteToken: boolean;
-
 }) => {
-  const baalIface = new ethers.utils.Interface([
-    "function setAdminConfig(bool pauseShares, bool pauseLoot)",
-  ]);
-  return baalIface.encodeFunctionData("setAdminConfig", [
-    pauseVoteToken,
-    pauseNvToken,
-  ]);
+  const baalIface = new ethers.utils.Interface(["function setAdminConfig(bool pauseShares, bool pauseLoot)"]);
+  return baalIface.encodeFunctionData("setAdminConfig", [pauseVoteToken, pauseNvToken]);
 };
 
 export const shamanZodiacModuleConfigTX = async ({
   avatarAddress,
   shamanZodiacModuleAddress,
-} : {
+}: {
   avatarAddress: `0x${string}`;
   shamanZodiacModuleAddress: `0x${string}`;
 }) => {
@@ -201,25 +161,16 @@ export const shamanZodiacModuleConfigTX = async ({
     "function execTransactionFromModule(address to, uint256 value, bytes memory data, uint8 operation)",
   ]);
   const ADD_MODULE = safeIface.encodeFunctionData("enableModule", [shamanZodiacModuleAddress]);
-  
-  const EXEC_TX_FROM_MODULE = safeIface.encodeFunctionData(
-    "execTransactionFromModule",
-    [
-      avatarAddress, // to
-      "0", //value
-      ADD_MODULE, // data
-      "0", // operation
-    ],
-  );
 
-  const baalIface = new ethers.utils.Interface([
-    "function executeAsBaal(address _to, uint256 _value, bytes _data)",
+  const EXEC_TX_FROM_MODULE = safeIface.encodeFunctionData("execTransactionFromModule", [
+    avatarAddress, // to
+    "0", //value
+    ADD_MODULE, // data
+    "0", // operation
   ]);
-  return baalIface.encodeFunctionData("executeAsBaal", [
-    avatarAddress,
-    0,
-    EXEC_TX_FROM_MODULE,
-  ]);
+
+  const baalIface = new ethers.utils.Interface(["function executeAsBaal(address _to, uint256 _value, bytes _data)"]);
+  return baalIface.encodeFunctionData("executeAsBaal", [avatarAddress, 0, EXEC_TX_FROM_MODULE]);
 };
 
 export const assembleBaalInitActions = async ({
@@ -242,7 +193,7 @@ export const assembleBaalInitActions = async ({
     }),
     // tokenDistroTX(formValues, memberAddress),
     // this will not be indexed as is. move intro post to metadataConfigTX
-    // introPostConfigTX(formValues, memberAddress, POSTER.toLowerCase(), chainId), 
+    // introPostConfigTX(formValues, memberAddress, POSTER.toLowerCase(), chainId),
   ];
 };
 
@@ -254,9 +205,7 @@ export const calculateBaalAddress = async ({
   yeet24Summoner: string;
 }) => {
   const hos = (await ethers.getContractAt("Yeet24HOS", yeet24Summoner)) as Yeet24HOS;
-  const expectedDAOAddress = await hos.callStatic.calculateBaalAddress(
-    saltNonce
-  );
+  const expectedDAOAddress = await hos.callStatic.calculateBaalAddress(saltNonce);
 
   return ethers.utils.getAddress(expectedDAOAddress);
 };
@@ -268,7 +217,7 @@ export const generateShamanSaltNonce = ({
   saltNonce,
   shamanPermissions,
   shamanTemplate,
-} : {
+}: {
   baalAddress: string;
   index: string;
   shamanPermissions: string;
@@ -279,11 +228,7 @@ export const generateShamanSaltNonce = ({
   return ethers.utils.keccak256(
     encodeValues(
       ["address", "uint256", "address", "uint256", "bytes32", "uint256"],
-      [
-        baalAddress, index, shamanTemplate, shamanPermissions,
-        ethers.utils.keccak256(initializeParams),
-        saltNonce,
-      ]
+      [baalAddress, index, shamanTemplate, shamanPermissions, ethers.utils.keccak256(initializeParams), saltNonce],
     ),
   );
 };
@@ -292,17 +237,12 @@ export const calculateHOSShamanAddress = async ({
   hosSummoner,
   saltNonce,
   shamanSingleton,
-  
 }: {
   hosSummoner: string;
   saltNonce: string;
   shamanSingleton: string;
 }) => {
-
   const hos = (await ethers.getContractAt("Yeet24HOS", hosSummoner)) as Yeet24HOS;
-  const predictedShamanAddress = await hos.callStatic.predictDeterministicShamanAddress(
-    shamanSingleton,
-    saltNonce
-  );
+  const predictedShamanAddress = await hos.callStatic.predictDeterministicShamanAddress(shamanSingleton, saltNonce);
   return predictedShamanAddress;
 };

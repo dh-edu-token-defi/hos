@@ -5,7 +5,9 @@ import { IBaal } from "@daohaus/baal-contracts/contracts/interfaces/IBaal.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { ERC165Upgradeable } from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import { ContextUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import { IShaman } from "./interfaces/IShaman.sol";
 
@@ -32,7 +34,11 @@ abstract contract ShamanBase is IShaman, ContextUpgradeable, ReentrancyGuardUpgr
      * @param _baalAddress baal address
      * @param _vaultAddress baal vault address
      */
-    function __ShamanBase_init(string memory _name, address _baalAddress, address _vaultAddress) internal onlyInitializing {
+    function __ShamanBase_init(
+        string memory _name,
+        address _baalAddress,
+        address _vaultAddress
+    ) internal onlyInitializing {
         if (bytes(_name).length == 0) revert ShamanBase__InvalidName();
         if (_baalAddress == address(0)) revert ShamanBase__InvalidAddress();
         __Context_init();
@@ -48,7 +54,11 @@ abstract contract ShamanBase is IShaman, ContextUpgradeable, ReentrancyGuardUpgr
      * @param _baalAddress baal address
      * @param _vaultAddress baal vault address
      */
-    function __ShamanBase_init_unchained(string memory _name, address _baalAddress, address _vaultAddress) internal onlyInitializing {
+    function __ShamanBase_init_unchained(
+        string memory _name,
+        address _baalAddress,
+        address _vaultAddress
+    ) internal onlyInitializing {
         NAME = _name;
         _baal = IBaal(_baalAddress);
         _vault = _vaultAddress == address(0) ? _baal.avatar() : _vaultAddress;
@@ -57,10 +67,10 @@ abstract contract ShamanBase is IShaman, ContextUpgradeable, ReentrancyGuardUpgr
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165Upgradeable, IERC165) returns (bool) {
-        return
-            interfaceId == type(IShaman).interfaceId ||
-            super.supportsInterface(interfaceId);
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC165Upgradeable, IERC165) returns (bool) {
+        return interfaceId == type(IShaman).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**

@@ -1,4 +1,5 @@
 import { BigNumberish } from "ethers";
+
 import { encodeValues } from "./index";
 
 export type YeeterParams = {
@@ -24,10 +25,10 @@ export const assembleYeeterShamanParams = ({
   multiplier,
   startTimeInSeconds,
   endTimeInSeconds,
-} : YeeterParams) => {
+}: YeeterParams) => {
   var today = new Date();
   var tomorrow = new Date();
-  tomorrow.setDate(today.getDate() + 1)
+  tomorrow.setDate(today.getDate() + 1);
 
   // uint256 _startTime,
   // uint256 _endTime,
@@ -38,16 +39,7 @@ export const assembleYeeterShamanParams = ({
   // address[] memory _feeRecipients,
   // uint256[] memory _feeAmounts
   return encodeValues(
-    [
-      "uint256",
-      "uint256",
-      "bool",
-      "uint256",
-      "uint256",
-      "uint256",
-      "address[]",
-      "uint256[]",
-    ],
+    ["uint256", "uint256", "bool", "uint256", "uint256", "uint256", "address[]", "uint256[]"],
     [
       // Math.floor(Number(today) / 1000),
       startTimeInSeconds,
@@ -65,7 +57,6 @@ export const assembleYeeterShamanParams = ({
       feeRecipients,
       // DEFAULT_YEETER_VALUES.feeAmounts,
       feeAmounts,
-
-    ]
+    ],
   );
 };

@@ -127,7 +127,7 @@ contract Yeet24HOS is HOSBase {
         if (initShamanDeployParams.length != totalParams) revert Yeet24HOS__ParamSizeMismatch();
         address vault = IBaal(baal).avatar(); // fetch baal main treasury
         // shaman setup with dao address, vault address and initShamanParams
-        for (uint256 i; i < totalParams;) {
+        for (uint256 i; i < totalParams; ) {
             IShaman(shamans[i]).setup(baal, vault, initShamanDeployParams[i]);
             unchecked {
                 ++i;

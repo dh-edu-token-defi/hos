@@ -14,12 +14,11 @@ error AdminShaman__NoAdminRole();
  * @dev Inherits from ShamanBase
  */
 abstract contract AdminShaman is ShamanBase, IAdminShaman {
-
     /**
      * @notice A modifier for methods that require to check shaman admin privileges
      */
     modifier isBaalAdmin() {
-        if(!isAdmin()) revert AdminShaman__NoAdminRole();
+        if (!isAdmin()) revert AdminShaman__NoAdminRole();
         _;
     }
 
@@ -30,7 +29,11 @@ abstract contract AdminShaman is ShamanBase, IAdminShaman {
      * @param _baalAddress baal address
      * @param _vaultAddress baal vault address
      */
-    function __AdminShaman_init(string memory _name, address _baalAddress, address _vaultAddress) internal onlyInitializing {
+    function __AdminShaman_init(
+        string memory _name,
+        address _baalAddress,
+        address _vaultAddress
+    ) internal onlyInitializing {
         __ShamanBase_init(_name, _baalAddress, _vaultAddress);
         __AdminShaman_init_unchained();
     }
@@ -39,15 +42,13 @@ abstract contract AdminShaman is ShamanBase, IAdminShaman {
      * @notice Local initializer function
      * @dev Should be called through main initializer to set any local state variables
      */
-    function __AdminShaman_init_unchained() internal onlyInitializing { }
+    function __AdminShaman_init_unchained() internal onlyInitializing {}
 
     /**
      * @dev See {IERC165-supportsInterface}.
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ShamanBase, IERC165) returns (bool) {
-        return
-            interfaceId == type(IAdminShaman).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IAdminShaman).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**

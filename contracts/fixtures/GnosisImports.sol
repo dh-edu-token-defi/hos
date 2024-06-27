@@ -9,7 +9,6 @@ import "@gnosis.pm/safe-contracts/contracts/examples/libraries/SignMessage.sol";
 import "@gnosis.pm/safe-contracts/contracts/handler/DefaultCallbackHandler.sol";
 import "@gnosis.pm/safe-contracts/contracts/interfaces/ISignatureValidator.sol";
 
-
 /// @title Compatibility Fallback Handler - fallback handler to provider compatibility between pre 1.3.0 and 1.3.0+ Safe contracts
 /// @dev copy/pasted from original source to avoid error: `Data locations of parameters have to be the same when overriding non-external functions, but they differ`
 /// on `isValidSignature` function.
@@ -149,5 +148,3 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
         }
     }
 }
-
-
