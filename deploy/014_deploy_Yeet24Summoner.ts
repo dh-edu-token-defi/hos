@@ -49,6 +49,8 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const moduleProxyFactoryAddress = currentModuleProxyFactoryAddress !== ethers.constants.AddressZero
     ? currentModuleProxyFactoryAddress
     : setupAddresses.moduleProxyFactory;
+  
+  console.log("BVSummoner -> ModuleProxyFactory", moduleProxyFactoryAddress);
 
   const yeet24ShamanModule =
     testNetworks.includes(network.name) ? (await deployments.get("Yeet24ShamanModule")).address : addresses.yeet24ShamanModule;
@@ -72,7 +74,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           bvSummonerAddress,
           moduleProxyFactoryAddress,
           [yeet24ShamanModule, yeeter, sharesToken, lootToken],
-          "DHYeet24ShamanSummoner.3"
+          "DHYeet24ShamanSummoner.4"
         ],
       },
     },
