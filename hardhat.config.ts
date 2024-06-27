@@ -38,6 +38,7 @@ const chainIds = {
   "optimism-mainnet": 10,
   "optimism-sepolia": 11155420,
   "polygon-mainnet": 137,
+  "base-mainnet": 8453,
 };
 
 const explorerApiKey = (networkName: keyof typeof chainIds) => {
@@ -56,6 +57,8 @@ const explorerApiKey = (networkName: keyof typeof chainIds) => {
       case "arbitrum-mainnet":
       case "arbitrum-sepolia":
         return process.env.ARBISCAN_APIKEY;
+      case "base-mainnet":
+        return process.env.BASESCAN_API_KEY;
       default:
         break;
     }
@@ -77,6 +80,8 @@ const getNodeURI = (networkName: keyof typeof chainIds) => {
       return "https://rpc.ankr.com/polygon";
     case "gnosis":
       return "https://rpc.gnosischain.com";
+    case "base-mainnet":
+      return "https://mainnet.base.org";
     default:
       return "https://" + networkName + ".infura.io/v3/" + infuraApiKey;
   }
@@ -149,6 +154,7 @@ const config: HardhatUserConfig = {
     optimism: getChainConfig("optimism-mainnet"),
     optimismSepolia: getChainConfig("optimism-sepolia"),
     "polygon-mainnet": getChainConfig("polygon-mainnet"),
+    base: getChainConfig("base-mainnet"),
   },
   paths: {
     artifacts: "./artifacts",
@@ -234,8 +240,17 @@ const config: HardhatUserConfig = {
       arbitrumOne: explorerApiKey("arbitrum-mainnet"),
       // arbitrumSepolia: explorerApiKey("arbitrum-sepolia"),
       polygon: explorerApiKey("polygon-mainnet"),
+      base: explorerApiKey("base-mainnet"),
     },
     customChains: [
+      {
+        network: "base",
+        chainId: 8453,
+        urls: {
+          apiURL: "https://api.basescan.org/api",
+          browserURL: "https://basescan.org",
+        },
+      },
       {
         network: "buildbear",
         chainId: 18229,
