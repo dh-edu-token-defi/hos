@@ -106,7 +106,6 @@ contract Yeet24HOS is HOSBase {
 
     /**
      * @dev sets up the already deployed claim shaman with init params
-     * shaman init params (address _nftAddress, address _registry, address _tbaImp, uint256 _perNft, uint256 _sharesPerNft)
      * @param initializationShamanParams shaman init params
      * @param shamans IShamans
      * @param baal address

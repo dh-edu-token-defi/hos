@@ -43,9 +43,8 @@ export const calculateSafeProxyAddress = async ({
       });
   } catch (e: unknown) {
     expectedSafeAddress = getSafeAddressFromRevertMessage(e);
-  } finally {
-    return expectedSafeAddress;
   }
+  return expectedSafeAddress;
 };
 
 export const buildSetupSafeCalldata = ({

@@ -20,7 +20,8 @@ error ShamanBase__InvalidName();
  * @title Baal Shaman Base contract
  * @author DAOHaus
  * @notice Implement the base functionality for a Shaman contract
- * @dev This contract should not be be directly inherited. Use one of the shaman flavours instead (e.g. admin, manager, governor)
+ * @dev This contract should not be be directly inherited. Use one of the shaman flavours instead
+ *      (e.g. admin, manager, governor)
  */
 abstract contract ShamanBase is IShaman, ContextUpgradeable, ReentrancyGuardUpgradeable, ERC165Upgradeable {
     string internal NAME;

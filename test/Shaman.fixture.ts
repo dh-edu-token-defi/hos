@@ -92,7 +92,7 @@ export const shamanFixture = deployments.createFixture<ShamanSetup, Opts>(
     );
 
     // Get Safe infra
-    let safe: SafeInfra = {
+    const safe: SafeInfra = {
       fallbackHandler: (await ethers.getContractAt(
         "CompatibilityFallbackHandler",
         setupAddresses.gnosisFallbackLibrary,

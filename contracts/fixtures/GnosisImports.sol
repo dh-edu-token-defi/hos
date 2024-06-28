@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity 0.8.7;
 
-import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol"; //https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
-import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol"; //https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
-import "@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol"; //https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
-import "@gnosis.pm/safe-contracts/contracts/examples/libraries/SignMessage.sol"; //https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
-// import "@gnosis.pm/safe-contracts/contracts/handler/CompatibilityFallbackHandler.sol"; //https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
+import "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
+import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
+import "@gnosis.pm/safe-contracts/contracts/libraries/MultiSend.sol";
+import "@gnosis.pm/safe-contracts/contracts/examples/libraries/SignMessage.sol";
+// import "@gnosis.pm/safe-contracts/contracts/handler/CompatibilityFallbackHandler.sol";
 import "@gnosis.pm/safe-contracts/contracts/handler/DefaultCallbackHandler.sol";
 import "@gnosis.pm/safe-contracts/contracts/interfaces/ISignatureValidator.sol";
 
-/// @title Compatibility Fallback Handler - fallback handler to provider compatibility between pre 1.3.0 and 1.3.0+ Safe contracts
-/// @dev copy/pasted from original source to avoid error: `Data locations of parameters have to be the same when overriding non-external functions, but they differ`
-/// on `isValidSignature` function.
-/// @author Richard Meissner - <richard@gnosis.pm>
+/// @title Original Source "@gnosis.pm/safe-contracts/contracts/handler/CompatibilityFallbackHandler.sol"
+/// @dev Copied to local to avoid a compilation issue due to different Solidity versions
+
 contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValidator {
     //keccak256(
     //    "SafeMessage(bytes message)"
@@ -67,7 +66,6 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
      * @param _dataHash Hash of the data signed on the behalf of address(msg.sender)
      * @param _signature Signature byte array associated with _dataHash
      * @return a bool upon valid or invalid signature with corresponding _dataHash
-     * @notice See https://github.com/gnosis/util-contracts/blob/bb5fe5fb5df6d8400998094fb1b32a178a47c3a1/contracts/StorageAccessible.sol
      */
     function isValidSignature(bytes32 _dataHash, bytes calldata _signature) external view returns (bytes4) {
         ISignatureValidator validator = ISignatureValidator(msg.sender);
@@ -86,7 +84,8 @@ contract CompatibilityFallbackHandler is DefaultCallbackHandler, ISignatureValid
 
     /**
      * @dev Performs a delegetecall on a targetContract in the context of self.
-     * Internally reverts execution to avoid side effects (making it static). Catches revert and returns encoded result as bytes.
+     * Internally reverts execution to avoid side effects (making it static).
+     * Catches revert and returns encoded result as bytes.
      * @param targetContract Address of the contract containing the code to execute.
      * @param calldataPayload Calldata that should be sent to the target contract (encoded method name and arguments).
      */

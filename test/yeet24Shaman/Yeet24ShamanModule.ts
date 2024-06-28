@@ -1,16 +1,15 @@
-import { Baal, BaalAndVaultSummoner, BaalSummoner, MultiSend, Poster, Shares } from "@daohaus/baal-contracts";
-import { ProposalType, calculateSafeProxyAddress, getSaltNonce } from "@daohaus/baal-contracts/hardhat";
+import { Baal, BaalAndVaultSummoner, BaalSummoner, Poster, Shares } from "@daohaus/baal-contracts";
+import { calculateSafeProxyAddress, getSaltNonce } from "@daohaus/baal-contracts/hardhat";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import {
   impersonateAccount,
-  reset,
   setBalance,
   stopImpersonatingAccount,
   time,
 } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { BigNumber, BigNumberish, Signer } from "ethers";
-import { config, deployments, ethers, getChainId, getNamedAccounts, getUnnamedAccounts, network } from "hardhat";
+import { config, deployments, ethers, getUnnamedAccounts, network } from "hardhat";
 
 import {
   EthYeeter,
@@ -45,7 +44,7 @@ describe("Yeet24ShamanModule", function () {
   let poster: Poster;
   let safeProxyFactory: GnosisSafeProxyFactory;
   let safeMastercopy: GnosisSafe;
-  let multisend: MultiSend;
+  // let multisend: MultiSend;
   let weth: WETH;
 
   let nonFungiblePositionManager: INonfungiblePositionManager;
@@ -84,13 +83,13 @@ describe("Yeet24ShamanModule", function () {
 
   let yeet24ShamanParams: Yeet24Params;
 
-  const proposal: ProposalType = {
-    flag: 0,
-    data: "0x",
-    details: "test proposal",
-    expiration: 0,
-    baalGas: 0,
-  };
+  // const proposal: ProposalType = {
+  //   flag: 0,
+  //   data: "0x",
+  //   details: "test proposal",
+  //   expiration: 0,
+  //   baalGas: 0,
+  // };
 
   let users: { [key: string]: User };
 
@@ -117,12 +116,12 @@ describe("Yeet24ShamanModule", function () {
       },
       fixtureTags,
     });
-    const shamans = setup.shamans;
+    // const shamans = setup.shamans;
     users = setup.users;
 
     safeProxyFactory = setup.safe.safeProxyFactory;
     safeMastercopy = setup.safe.masterCopy;
-    multisend = setup.safe.multisend;
+    // multisend = setup.safe.multisend;
 
     // // MUST run after fixture due to how chain snapshot works on hardhat
     // const setupBaal = await baalSetup({
@@ -1056,10 +1055,12 @@ describe("Yeet24ShamanModule", function () {
         .to.emit(yeeterShaman, "OnReceived")
         .withArgs(signer.address, tx.value, mintedTokens, baal.address, avatar.address, "");
       if (isShares) {
-        expect(tx).to.emit(shares, "Transfer").withArgs(ethers.constants.AddressZero, signer.address, mintedTokens);
+        await expect(tx)
+          .to.emit(sharesToken, "Transfer")
+          .withArgs(ethers.constants.AddressZero, signer.address, mintedTokens);
         expect(await sharesToken.balanceOf(signer.address)).to.be.equal(mintedTokens);
       } else {
-        expect(tx)
+        await expect(tx)
           .to.emit(govLootToken, "Transfer")
           .withArgs(ethers.constants.AddressZero, signer.address, mintedTokens);
         expect(await govLootToken.balanceOf(signer.address)).to.be.equal(mintedTokens);

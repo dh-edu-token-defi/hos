@@ -33,7 +33,7 @@ error Yeet24ShamanModule__ExecutionFailed(bytes returnData);
 /**
  * @title A fair token launcher designed to democratize the token pre-sale process in the DeFi ecosystem.
  * @author DAOHaus
- * @notice It uses Yeeter for token pre-sales and Uniswap V3 for pool creation and initial liquidity position management.
+ * @notice It uses Yeeter for token pre-sales and Uniswap V3 for pool creation and initial liquidity position management
  * @dev In order to operate the contract should have Baal Admin and Manager privileges as well as being added as
  * a Safe module to the Baal/Yeeter vault.
  */
@@ -381,9 +381,12 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
                 (token, address(weth), amounts[0], yeethBalance)
             );
             bytes memory multisendTxs = abi.encodePacked(
-                encodeMultiSendAction(Enum.Operation.Call, address(weth), yeethBalance, bytes("")), // eth -> weth
-                encodeMultiSendAction(Enum.Operation.Call, address(weth), 0, wethDepositCalldata), // transfer weth to shaman
-                encodeMultiSendAction(Enum.Operation.Call, address(this), 0, createPositionCalldata) // create pool + mint position
+                // eth -> weth
+                encodeMultiSendAction(Enum.Operation.Call, address(weth), yeethBalance, bytes("")),
+                // transfer weth to shaman
+                encodeMultiSendAction(Enum.Operation.Call, address(weth), 0, wethDepositCalldata),
+                // create pool + mint position
+                encodeMultiSendAction(Enum.Operation.Call, address(this), 0, createPositionCalldata)
             );
             (bool multiSendSuccess, bytes memory returnData) = execMultiSendCall(multisendTxs);
 

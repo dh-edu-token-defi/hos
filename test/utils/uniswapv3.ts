@@ -54,9 +54,9 @@ export const deployUniV3Infra = async () => {
     const nftDesriptorLibrary = await nftDescriptorLibFactory.deploy();
     // console.log("nftDesriptorLibrary", nftDesriptorLibrary.address);
 
-    const libraryPlaceholder = `${ethers.utils
-      .id("contracts/libraries/NFTDescriptor.sol:NFTDescriptor")
-      .substring(2, 2 + 34)}`;
+    // const libraryPlaceholder = `${ethers.utils
+    //   .id("contracts/libraries/NFTDescriptor.sol:NFTDescriptor")
+    //   .substring(2, 2 + 34)}`;
 
     // console.log("libraryPlaceholder", libraryPlaceholder);
 

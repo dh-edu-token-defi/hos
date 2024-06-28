@@ -7,7 +7,7 @@ import { IWETH9 } from "../libs/IWETH9.sol";
 /**
  * @title A fair token launcher designed to democratize the token pre-sale process in the DeFi ecosystem.
  * @author DAOHaus
- * @notice It uses Yeeter for token pre-sales and Uniswap V3 for pool creation and initial liquidity position management.
+ * @notice It uses Yeeter for token pre-sales and Uniswap V3 for pool creation and initial liquidity position management
  * @dev In order to operate the contract should have Baal Admin and Manager privileges as well as being added as
  * a Safe module to the Baal/Yeeter vault.
  */
@@ -17,8 +17,10 @@ interface IYeet24Shaman {
      * @dev If goal is achieved, it should execute the following actions:
      * - Mint a shares amount to this contract so it doubles the total supply of Baal shares
      * - Turn Baal shares/loot transferrable
-     * - if any boostRewards (e.g. fees + extra boostRewardsPool deposits) are available forward balance to the yeeter vault
-     * - Execute a multiSend to wrap ETH collected in yeeter vault, transfer WETH from vault to the contract and call createPoolAndMintPosition.
+     * - if any boostRewards (e.g. fees + extra boostRewardsPool deposits) are available forward balance
+     *   to the yeeter vault
+     * - Execute a multiSend to wrap ETH collected in yeeter vault, transfer WETH from vault to the contract
+     *   and call createPoolAndMintPosition.
      * - Create a UniV3Pool for shares token / WETH pair.
      * - Minted position is finally owned by the vault.
      * If fails to achieved the goal, it should execute the following actions:

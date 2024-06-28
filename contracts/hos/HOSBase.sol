@@ -204,8 +204,8 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * shaman is not fully setup here, only the address is set
      * @param baalAddress The address of the baal
      * @param postInitializationActions The actions to be performed after the initialization
-     * @param initializationShamanParams The parameters for deploying the shaman (address template, uint256 permissions, ) third peram is for poste deploy init
-     *
+     * @param initializationShamanParams Initialization shaman params used in post deploy init
+     * @param saltNonce salt nonce
      */
     function deployShamans(
         address baalAddress,

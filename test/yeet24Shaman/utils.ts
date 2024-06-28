@@ -1,7 +1,5 @@
 import { BigNumberish } from "ethers";
-import { ethers } from "hardhat";
 
-import { Yeet24HOS } from "../../types";
 import {
   TokenConfig,
   YEETER_SHAMAN_PERMISSIONS,

@@ -26,8 +26,8 @@ export const assembleYeeterShamanParams = ({
   startTimeInSeconds,
   endTimeInSeconds,
 }: YeeterParams) => {
-  var today = new Date();
-  var tomorrow = new Date();
+  const today = new Date();
+  const tomorrow = new Date();
   tomorrow.setDate(today.getDate() + 1);
 
   // uint256 _startTime,
