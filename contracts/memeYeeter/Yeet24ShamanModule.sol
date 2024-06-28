@@ -1,44 +1,70 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.7 < 0.9.0;
+pragma solidity >=0.8.7 <0.9.0;
 
 import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import { IUniswapV3Factory } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import { IERC20, TransferHelper } from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
-
 import { IYeet24Shaman } from "./IYeet24Shaman.sol";
-import { AdminShaman } from "../../shaman/AdminShaman.sol";
-import { ManagerShaman } from "../../shaman/ManagerShaman.sol";
-import { IShaman } from "../../shaman/interfaces/IShaman.sol";
-import { ZodiacModuleShaman } from "../../shaman/ZodiacModuleShaman.sol";
-import { INonfungiblePositionManager } from "../../libs/INonfungiblePositionManager.sol";
-import { IWETH9 } from "../../libs/IWETH9.sol";
-import { CustomMath } from "../../libraries/CustomMath.sol";
+import { AdminShaman } from "../shaman/AdminShaman.sol";
+import { ManagerShaman } from "../shaman/ManagerShaman.sol";
+import { IShaman } from "../shaman/interfaces/IShaman.sol";
+import { ZodiacModuleShaman } from "../shaman/ZodiacModuleShaman.sol";
+import { INonfungiblePositionManager } from "../libs/INonfungiblePositionManager.sol";
+import { IWETH9 } from "../libs/IWETH9.sol";
+import { CustomMath } from "../libraries/CustomMath.sol";
 
-// import "hardhat/console.sol";
-
+// @notice Provided end time is invalid
 error Yeet24ShamanModule__InvalidEndTime();
+// @notice Provided pool fee is not used by UniV3
 error Yeet24ShamanModule__InvalidPoolFee();
+// @notice Yeeter campaign has not finished yet
 error Yeet24ShamanModule__YeetNotFinished();
+// @notice Shaman already executed
 error Yeet24ShamanModule__AlreadyExecuted();
+// @notice Function should be called only by the Baal vault
 error Yeet24ShamanModule__BaalVaultOnly();
+// @notice ETH transfer failed
 error Yeet24ShamanModule__TransferFailed(bytes returnData);
+// @notice MultiSend execution failed
 error Yeet24ShamanModule__ExecutionFailed(bytes returnData);
 
-// contract should be set to a shaman (admin, manager) and a treasury module in the summoner
+/**
+ * @title A fair token launcher designed to democratize the token pre-sale process in the DeFi ecosystem.
+ * @author DAOHaus
+ * @notice It uses Yeeter for token pre-sales and Uniswap V3 for pool creation and initial liquidity position management
+ * @dev In order to operate the contract should have Baal Admin and Manager privileges as well as being added as
+ * a Safe module to the Baal/Yeeter vault.
+ */
 contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, ManagerShaman {
+    /// @dev UniswapV3 NonfungiblePositionManager contract
     INonfungiblePositionManager public nonfungiblePositionManager;
+    /// @dev WETH address
     IWETH9 public weth;
 
+    /// @notice BoostRewardPool address
+    /// @dev Rewards pool address used to boost token launches or collect fees for failed campaigns.
+    /// It could be set to the zero address if no boosts rewards are plugged in into the campaign.
     address payable public boostRewardsPool;
 
+    /// @notice UniV3Pool address
+    /// @dev address is set only when a token is successfully launched
     address public pool;
+    /// @notice Liquidity position Id
+    /// @dev NFT position is set only when a token is successfully launched
     uint256 public positionId;
+    /// @notice Amount of ETH collected to launch the token
+    /// @dev Value is set only when a token is successfully launched
     uint256 public balance;
 
+    /// @notice endTime whn campaign expires
     uint256 public endTime;
+    /// @notice Campaign funding goal to be achieved.
+    /// @dev Should be the same as in the Yeeter
     uint256 public goal;
+    /// @notice trading fee used to create the UniV3 pool
+    /// @dev Fee should be registered in IUniswapV3Factory
     uint24 public poolFee; // e.g. fee tier corresponding to 1%
 
     /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128.
@@ -47,26 +73,85 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
     /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
     int24 internal maxTick;
 
+    /// @notice Whether or not the shaman got executed
+    /// @dev executed does not necessarily mean it successfully launched a token
     bool public executed;
+    /// @dev Whether or not the token was successfully launched
     bool internal success;
 
-    event Setup(address indexed baal, address indexed vault, uint256 goal, uint256 endTime, uint256 poolFee, address boostRewardsPool);
+    /// @notice emitted when the contract is initialized
+    /// @param baal baal address
+    /// @param vault baal vault address
+    /// @param goal campaign funding goal
+    /// @param endTime campaign end timestamp in seconds
+    /// @param poolFee UniV3 pool fee
+    /// @param boostRewardsPool rewards pool address
+    event Setup(
+        address indexed baal,
+        address indexed vault,
+        uint256 goal,
+        uint256 endTime,
+        uint256 poolFee,
+        address boostRewardsPool
+    );
+    /// @notice emitted when a token launch failed to meet the goal
+    /// @param yeethBalance amount of ETH collected during the campaign
+    /// @param boostRewards boost rewards collected durinng the campaign
+    /// @param forwardedToRewardsPool whether or not boost rewards were deposited back to the rewards pool
     event ExecutionFailed(uint256 yeethBalance, uint256 boostRewards, bool forwardedToRewardsPool);
+    /// @notice emitted when a token is successfully launched
+    /// @param token token address
+    /// @param tokenSupply token liquidity amount
+    /// @param ethSupply ETH liquidity amount
+    /// @param boostRewards extra ETH used to boost liquidity
     event Executed(address indexed token, uint256 tokenSupply, uint256 ethSupply, uint256 boostRewards);
-    event UniswapPositionCreated(address indexed pool, uint256 indexed positionId, uint160 sqrtPriceX96, uint128 liquidity, uint256 amount0, uint256 amount1);
+    /// @notice emitted when the UniV3 pool is created and the initial liquidity position is minted
+    /// @param pool pool address
+    /// @param positionId NFT position Id
+    /// @param sqrtPriceX96 initial token price
+    /// @param liquidity final liquidity provided
+    /// @param amount0 final amount of liquidity provided for token0
+    /// @param amount1 final amount of liquidity provided for token1
+    event UniswapPositionCreated(
+        address indexed pool,
+        uint256 indexed positionId,
+        uint160 sqrtPriceX96,
+        uint128 liquidity,
+        uint256 amount0,
+        uint256 amount1
+    );
+    /// @notice emitted when some boost rewards were deposited from the boostRewardsPool
+    /// @param sender pool address
+    /// @param value deposited amount
     event BoostRewardsDeposited(address indexed sender, uint256 value);
+    /// @notice emitted when contract ETH balance is forwarded to the Baal vault
+    /// @param value of ETH deposited into the Baal vault
     event ShamanBalanceWithdrawn(uint256 value);
 
+    /// @notice A modifier for methods that require to be called by the Baal vault
     modifier baalVaultOnly() {
         if (_msgSender() != vault()) revert Yeet24ShamanModule__BaalVaultOnly();
         _;
     }
 
+    /// @notice A modifer for methods that require to check if the execute function was already called
     modifier notExecuted() {
         if (executed) revert Yeet24ShamanModule__AlreadyExecuted();
         _;
     }
 
+    /**
+     * @notice Initializer function
+     * @dev _boostRewardsPool could be set to the zero address if no boosts rewards are plugged in into the campaign
+     * @param _baal baal address
+     * @param _vault bal vault address
+     * @param _nftPositionManager UniV3 NonfungiblePositionManager contract address
+     * @param _weth9Address weth address
+     * @param _boostRewardsPool boost rewards pool address
+     * @param _goal campaign funding goal
+     * @param _endTime campaign end timestamp is seconds
+     * @param _poolFee pool fee to be used by the token launcher
+     */
     function __Yeet24ShamanModule__init(
         address _baal,
         address _vault,
@@ -90,6 +175,16 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         );
     }
 
+    /**
+     * @notice Local initializer function
+     * @dev _boostRewardsPool could be set to the zero address if no boosts rewards are plugged in into the campaign
+     * @param _nftPositionManager UniV3 NonfungiblePositionManager contract address
+     * @param _weth9Address weth address
+     * @param _boostRewardsPool boost rewards pool address
+     * @param _goal campaign funding goal
+     * @param _endTime campaign end timestamp is seconds
+     * @param _poolFee pool fee to be used by the token launcher
+     */
     function __Yeet24ShamanModule__init_unchained(
         address _nftPositionManager,
         address _weth9Address,
@@ -112,6 +207,10 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         poolFee = _poolFee;
     }
 
+    /**
+     * @notice Main initializer function to setup the shaman config
+     * @inheritdoc IShaman
+     */
     function setup(address _baal, address _vault, bytes memory _initializeParams) public override(IShaman) initializer {
         (
             address _nftPositionManager,
@@ -120,10 +219,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             uint256 _goal,
             uint256 _expiration,
             uint24 _poolFee
-        ) = abi.decode(
-            _initializeParams,
-            (address, address, address, uint256, uint256, uint24)
-        );
+        ) = abi.decode(_initializeParams, (address, address, address, uint256, uint256, uint24));
         __Yeet24ShamanModule__init(
             _baal,
             _vault,
@@ -140,24 +236,31 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ZodiacModuleShaman, AdminShaman, ManagerShaman) returns (bool) {
-        return
-            interfaceId == type(IYeet24Shaman).interfaceId ||
-            super.supportsInterface(interfaceId);
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ZodiacModuleShaman, AdminShaman, ManagerShaman) returns (bool) {
+        return interfaceId == type(IYeet24Shaman).interfaceId || super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @notice Whether or not the campaign achieved the funding goal.
+     * @inheritdoc IYeet24Shaman
+     */
     function goalAchieved() public view returns (bool) {
         if (executed) return success;
         return vault().balance >= goal;
     }
 
+    /**
+     * @notice Creates a UniV3Pool and mint an  initial liquidity position
+     * @inheritdoc IYeet24Shaman
+     */
     function createPoolAndMintPosition(
         address token0,
         address token1,
         uint256 liquidityAmount0,
         uint256 liquidityAmount1
     ) external baalVaultOnly {
-
         // Ensure correct order of tokens based on their addresses
         (token0, token1, liquidityAmount0, liquidityAmount1) = token0 < token1
             ? (token0, token1, liquidityAmount0, liquidityAmount1)
@@ -170,12 +273,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         // console.log("sqrtPriceX96", sqrtPriceX96);
 
         // Create and initialize the pool if necessary
-        pool = nonfungiblePositionManager.createAndInitializePoolIfNecessary(
-            token0,
-            token1,
-            poolFee,
-            sqrtPriceX96
-        );
+        pool = nonfungiblePositionManager.createAndInitializePoolIfNecessary(token0, token1, poolFee, sqrtPriceX96);
         // console.log("pool", pool);
 
         // approve weth and shares with NonfungiblePositionManager (taken from univ3 docs)
@@ -201,7 +299,9 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         });
 
         // Mint the position
-        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = nonfungiblePositionManager.mint(mintParams);
+        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = nonfungiblePositionManager.mint(
+            mintParams
+        );
         positionId = tokenId;
         // console.log("tokenId", tokenId);
         // console.log("liquidity", liquidity);
@@ -226,6 +326,10 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         emit UniswapPositionCreated(pool, tokenId, sqrtPriceX96, liquidity, amount0, amount1);
     }
 
+    /**
+     * @notice Executes the token launch if yeeter campaign meets its goal
+     * @inheritdoc IYeet24Shaman
+     */
     function execute() public nonReentrant notExecuted isModuleEnabled isBaalAdmin isBaalManager {
         if (block.timestamp <= endTime) revert Yeet24ShamanModule__YeetNotFinished();
         uint256 yeethBalance = vault().balance;
@@ -238,7 +342,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             bool transferSuccess;
             if (boostRewards > 0 && boostRewardsPool != address(0)) {
                 bytes memory returnData;
-                (transferSuccess, returnData) = boostRewardsPool.call{value: boostRewards}("");
+                (transferSuccess, returnData) = boostRewardsPool.call{ value: boostRewards }("");
                 if (!transferSuccess) revert Yeet24ShamanModule__TransferFailed(returnData);
             }
             emit ExecutionFailed(yeethBalance, boostRewards, transferSuccess);
@@ -246,13 +350,13 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             success = true;
 
             address token = _baal.sharesToken();
-            
+
             address[] memory receivers = new address[](1);
             receivers[0] = address(this);
             uint256[] memory amounts = new uint256[](1);
             // get total tokens(shares) that were minted during pre-sale
             amounts[0] = IERC20(token).totalSupply();
-            
+
             // ManagerShaman action: mint 100% shares to this contract. this doubles the total shares
             _baal.mintShares(receivers, amounts);
 
@@ -262,7 +366,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             // Shaman action: if any boostRewards (e.g. fees + extra boostRewardsPool deposits) are available,
             // forward balance to the vault in charge of minting the pool initial liquidity position
             if (boostRewards > 0) {
-                (bool transferSuccess, bytes memory data) = vault().call{value: boostRewards}("");
+                (bool transferSuccess, bytes memory data) = vault().call{ value: boostRewards }("");
                 if (!transferSuccess) revert Yeet24ShamanModule__TransferFailed(data);
                 yeethBalance += boostRewards; // NOTICE: update balance to be used for minting pool position
             }
@@ -271,20 +375,20 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             //  - wrap ETH collected in vault
             //  - transfer WETH from vault to shaman
             //  - call shaman.createPoolAndMintPosition
-            bytes memory wethDepositCalldata = abi.encodeCall(
-                IWETH9.transfer,
-                (address(this), yeethBalance)
-            );
+            bytes memory wethDepositCalldata = abi.encodeCall(IWETH9.transfer, (address(this), yeethBalance));
             bytes memory createPositionCalldata = abi.encodeCall(
                 IYeet24Shaman.createPoolAndMintPosition,
                 (token, address(weth), amounts[0], yeethBalance)
             );
             bytes memory multisendTxs = abi.encodePacked(
-                encodeMultiSendAction(Enum.Operation.Call, address(weth), yeethBalance, bytes("")), // eth -> weth
-                encodeMultiSendAction(Enum.Operation.Call, address(weth), 0, wethDepositCalldata), // transfer weth to shaman
-                encodeMultiSendAction(Enum.Operation.Call, address(this), 0, createPositionCalldata) // create pool + mint position
+                // eth -> weth
+                encodeMultiSendAction(Enum.Operation.Call, address(weth), yeethBalance, bytes("")),
+                // transfer weth to shaman
+                encodeMultiSendAction(Enum.Operation.Call, address(weth), 0, wethDepositCalldata),
+                // create pool + mint position
+                encodeMultiSendAction(Enum.Operation.Call, address(this), 0, createPositionCalldata)
             );
-            (bool multiSendSuccess, bytes memory returnData) = _execMultiSendCall(multisendTxs);
+            (bool multiSendSuccess, bytes memory returnData) = execMultiSendCall(multisendTxs);
 
             if (!multiSendSuccess) revert Yeet24ShamanModule__ExecutionFailed(returnData);
 
@@ -294,18 +398,26 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         }
     }
 
+    /**
+     * @notice Withdraw any balance held in the contract and deposits into the vault.
+     * @inheritdoc IYeet24Shaman
+     */
     function withdrawShamanBalance() external baalVaultOnly {
         bool transferSuccess;
         bytes memory returnData;
         uint256 shamanBalance = address(this).balance;
         // Shaman MUST have been executed to be able to withdraw any remaining balance
         if (executed && shamanBalance > 0) {
-            (transferSuccess, returnData) = vault().call{value: shamanBalance}("");
+            (transferSuccess, returnData) = vault().call{ value: shamanBalance }("");
         }
         if (!transferSuccess) revert Yeet24ShamanModule__TransferFailed(returnData);
         emit ShamanBalanceWithdrawn(shamanBalance);
     }
 
+    /**
+     * @notice Accept ETH deposits as a form of rewards to boost initial pool liquidity
+     * @dev examples include receiving yeeter fees or extra deposits from a rewards pool
+     */
     receive() external payable {
         if (boostRewardsPool == msg.sender) {
             emit BoostRewardsDeposited(msg.sender, msg.value);

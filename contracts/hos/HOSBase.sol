@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import { UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import { IBaal } from "@daohaus/baal-contracts/contracts/interfaces/IBaal.sol";
@@ -45,7 +45,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         __UUPSUpgradeable_init();
         baalSummoner = IBaalSummoner(_baalSummoner);
         moduleProxyFactory = _moduleProxyFactory;
-        for (uint256 i; i < _allowlistTemplates.length;) {
+        for (uint256 i; i < _allowlistTemplates.length; ) {
             allowlistTemplates[_allowlistTemplates[i]] = true;
             unchecked {
                 ++i;
@@ -204,8 +204,8 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * shaman is not fully setup here, only the address is set
      * @param baalAddress The address of the baal
      * @param postInitializationActions The actions to be performed after the initialization
-     * @param initializationShamanParams The parameters for deploying the shaman (address template, uint256 permissions, ) third peram is for poste deploy init
-     *
+     * @param initializationShamanParams Initialization shaman params used in post deploy init
+     * @param saltNonce salt nonce
      */
     function deployShamans(
         address baalAddress,
@@ -219,10 +219,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             address[] memory shamanTemplates,
             uint256[] memory shamanPermissions,
             bytes[] memory initShamanDeployParams
-        ) = abi.decode(
-            initializationShamanParams,
-            (address[], uint256[], bytes[])
-        );
+        ) = abi.decode(initializationShamanParams, (address[], uint256[], bytes[]));
         require(
             shamanTemplates.length == shamanPermissions.length &&
                 shamanTemplates.length == initShamanDeployParams.length,
@@ -236,7 +233,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // create arrays to hold new shaman addresses
         address[] memory shamanAddresses = new address[](shamanTemplates.length);
 
-        for (uint256 i; i < shamanTemplates.length;) {
+        for (uint256 i; i < shamanTemplates.length; ) {
             require(shamanTemplates[i] != address(0), "HOS: shamanTemplates address is zero");
             require(isTemplateInAllowlist(shamanTemplates[i]), "HOS: template not in allowlist");
             // Clones because it should not need to be upgradable
@@ -257,7 +254,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         }
 
         // copy over the rest of the actions
-        for (uint256 i; i < actionsLength;) {
+        for (uint256 i; i < actionsLength; ) {
             amendedPostInitActions[i] = postInitializationActions[i];
             unchecked {
                 ++i;

@@ -1,19 +1,42 @@
-import { Baal, BaalAndVaultSummoner, BaalSummoner, MultiSend, Poster, Shares } from "@daohaus/baal-contracts";
-import { ProposalType, calculateSafeProxyAddress, getSaltNonce } from "@daohaus/baal-contracts/hardhat";
+import { Baal, BaalAndVaultSummoner, BaalSummoner, Poster, Shares } from "@daohaus/baal-contracts";
+import { calculateSafeProxyAddress, getSaltNonce } from "@daohaus/baal-contracts/hardhat";
+import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
+import {
+  impersonateAccount,
+  setBalance,
+  stopImpersonatingAccount,
+  time,
+} from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { BigNumber, BigNumberish, Signer } from "ethers";
-import { deployments, ethers, getChainId, getNamedAccounts, getUnnamedAccounts, network, config } from "hardhat";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
-import { impersonateAccount, reset, setBalance, stopImpersonatingAccount, time } from "@nomicfoundation/hardhat-network-helpers";
+import { config, deployments, ethers, getUnnamedAccounts, network } from "hardhat";
 
-import { YEET24_SHAMAN_PERMISSIONS, Yeet24Params, assembleYeet24ShamanParams, assembleYeet24SummonerArgs } from "./utils";
+import {
+  EthYeeter,
+  GnosisSafe,
+  GnosisSafeProxyFactory,
+  GovernorLoot,
+  INonfungiblePositionManager,
+  WETH,
+  Yeet24HOS,
+  Yeet24ShamanModule,
+} from "../../types";
 import { User, shamanFixture } from "../Shaman.fixture";
-import { calculateBaalAddress, calculateHOSShamanAddress, DEFAULT_SUMMON_VALUES, generateShamanSaltNonce } from "../utils/hos";
-import { deployUniV3Infra } from "../utils/uniswapv3";
-import { assembleYeeterShamanParams, YEETER_SHAMAN_PERMISSIONS, YeeterParams } from "../utils/yeeter";
-
-import { EthYeeter, GnosisSafe, GnosisSafeProxyFactory, GovernorLoot, INonfungiblePositionManager, WETH, Yeet24HOS, Yeet24ShamanModule } from "../../types";
 import { buildSetupSafeCalldata, deploySafe, executeSafeTx, getNetworkConfig } from "../utils";
+import {
+  DEFAULT_SUMMON_VALUES,
+  calculateBaalAddress,
+  calculateHOSShamanAddress,
+  generateShamanSaltNonce,
+} from "../utils/hos";
+import { deployUniV3Infra } from "../utils/uniswapv3";
+import { YEETER_SHAMAN_PERMISSIONS, YeeterParams, assembleYeeterShamanParams } from "../utils/yeeter";
+import {
+  YEET24_SHAMAN_PERMISSIONS,
+  Yeet24Params,
+  assembleYeet24ShamanParams,
+  assembleYeet24SummonerArgs,
+} from "./utils";
 
 describe("Yeet24ShamanModule", function () {
   let shares: Shares;
@@ -21,7 +44,7 @@ describe("Yeet24ShamanModule", function () {
   let poster: Poster;
   let safeProxyFactory: GnosisSafeProxyFactory;
   let safeMastercopy: GnosisSafe;
-  let multisend: MultiSend;
+  // let multisend: MultiSend;
   let weth: WETH;
 
   let nonFungiblePositionManager: INonfungiblePositionManager;
@@ -33,8 +56,8 @@ describe("Yeet24ShamanModule", function () {
   let yeet24Singleton: string;
   let yeeterSingleton: string;
 
-  const defaultBaalMetadata = { 
-    name: 'HOSDAO',
+  const defaultBaalMetadata = {
+    name: "HOSDAO",
     description: "HOS Dao",
     longDescription: "",
     avatarImg: "", // TODO: is this the right field?
@@ -49,7 +72,6 @@ describe("Yeet24ShamanModule", function () {
     lootPerYeet: "100",
     minTribute: ethers.utils.parseEther("0.1"),
     multiplier: "100",
-    
   };
   let yeeterShamanParams: YeeterParams;
 
@@ -61,13 +83,13 @@ describe("Yeet24ShamanModule", function () {
 
   let yeet24ShamanParams: Yeet24Params;
 
-  const proposal: ProposalType = {
-    flag: 0,
-    data: "0x",
-    details: "test proposal",
-    expiration: 0,
-    baalGas: 0,
-  };
+  // const proposal: ProposalType = {
+  //   flag: 0,
+  //   data: "0x",
+  //   details: "test proposal",
+  //   expiration: 0,
+  //   baalGas: 0,
+  // };
 
   let users: { [key: string]: User };
 
@@ -82,35 +104,24 @@ describe("Yeet24ShamanModule", function () {
 
   beforeEach(async function () {
     const networkConfig = getNetworkConfig();
-    const infraFixtureTags = network.name === "hardhat" && !networkConfig.forking
-      ? [
-        "Infra",
-        "BaalSummoner",
-        "BaalAndVaultSummoner",
-      ] : [];
-    const fixtureTags = [
-      ...infraFixtureTags,
-      "GovernorLoot",
-      "Yeeter2",
-      "Yeet24ShamanModule",
-      "Yeet24HOS",
-    ];
+    const infraFixtureTags =
+      network.name === "hardhat" && !networkConfig.forking ? ["Infra", "BaalSummoner", "BaalAndVaultSummoner"] : [];
+    const fixtureTags = [...infraFixtureTags, "GovernorLoot", "Yeeter2", "Yeet24ShamanModule", "Yeet24HOS"];
     const setup = await shamanFixture({
-        deployShamanContracts: {
-            yeet24ShamanModule: {
-                contract: "Yeet24ShamanModule",
-                contractName: "Yeet24ShamanModule",
-            },
+      deployShamanContracts: {
+        yeet24ShamanModule: {
+          contract: "Yeet24ShamanModule",
+          contractName: "Yeet24ShamanModule",
         },
-        fixtureTags,
+      },
+      fixtureTags,
     });
-    const shamans = setup.shamans;
+    // const shamans = setup.shamans;
     users = setup.users;
 
     safeProxyFactory = setup.safe.safeProxyFactory;
     safeMastercopy = setup.safe.masterCopy;
-    multisend = setup.safe.multisend;
-
+    // multisend = setup.safe.multisend;
 
     // // MUST run after fixture due to how chain snapshot works on hardhat
     // const setupBaal = await baalSetup({
@@ -132,17 +143,23 @@ describe("Yeet24ShamanModule", function () {
 
     // get summoner contracts
     summoner = (await ethers.getContractAt("Yeet24HOS", hosDeployed.address, signer)) as Yeet24HOS;
-    const bvSummoner = (await ethers.getContractAt("BaalAndVaultSummoner", await summoner.baalVaultSummoner())) as BaalAndVaultSummoner;
+    const bvSummoner = (await ethers.getContractAt(
+      "BaalAndVaultSummoner",
+      await summoner.baalVaultSummoner(),
+    )) as BaalAndVaultSummoner;
     baalSummoner = (await ethers.getContractAt("BaalSummoner", await bvSummoner._baalSummoner())) as BaalSummoner;
 
     // NOTICE: override safe config to get actual Safe infra used by Baal
     const currentSafeMastercopyAddress = await baalSummoner.gnosisSingleton();
     safeMastercopy = (await ethers.getContractAt("GnosisSafe", currentSafeMastercopyAddress)) as GnosisSafe;
     const currentSafeProxyFactoryAddress = ethers.utils.getAddress(
-      (await ethers.provider.getStorageAt(baalSummoner.address, "0xd0")).substring(26)
+      (await ethers.provider.getStorageAt(baalSummoner.address, "0xd0")).substring(26),
     );
     if (currentSafeProxyFactoryAddress !== ethers.constants.AddressZero) {
-      safeProxyFactory = (await ethers.getContractAt("GnosisSafeProxyFactory", currentSafeProxyFactoryAddress)) as GnosisSafeProxyFactory;
+      safeProxyFactory = (await ethers.getContractAt(
+        "GnosisSafeProxyFactory",
+        currentSafeProxyFactoryAddress,
+      )) as GnosisSafeProxyFactory;
     }
 
     shares = setup.baalContracts.sharesSingleton;
@@ -150,10 +167,7 @@ describe("Yeet24ShamanModule", function () {
     poster = setup.baalContracts.poster;
 
     // deploy UniV3 infra
-    const {
-        nftpManager,
-        WETH,
-    } = await deployUniV3Infra();
+    const { nftpManager, WETH } = await deployUniV3Infra();
     // console.log("UniV3", nftpManager.address, WETH.address);
 
     // Create a Pool Rewards Pool Safe
@@ -175,25 +189,22 @@ describe("Yeet24ShamanModule", function () {
       saltNonce: safeSaltNonce,
       singletonAddress: safeMastercopy.address,
     });
-    
+
     // Fund Rewards pool
     const rewardsPool = ethers.utils.parseEther("1");
     const fundTx = await signer.sendTransaction({
       to: boostRewardsPoolSafe.address,
-      value: rewardsPool
+      value: rewardsPool,
     });
     await fundTx.wait();
 
     // Build Shaman params
     yeeterShamanParams = {
       ...defaultYeeterShamanParams,
-      feeRecipients: [
-        users.hausEcoFund.address as `0x${string}`,
-        users.yeeterTeam.address as `0x${string}`,
-      ], // yeeter team, daohaus eco fund
+      feeRecipients: [users.hausEcoFund.address as `0x${string}`, users.yeeterTeam.address as `0x${string}`], // yeeter team, daohaus eco fund
       startTimeInSeconds: await time.latest(),
       // five days since initialDate. See hardhat network config
-      endTimeInSeconds: new Date("2024-06-05T00:00:00.000-05:00").getTime() / 1000, 
+      endTimeInSeconds: new Date("2024-06-05T00:00:00.000-05:00").getTime() / 1000,
     };
 
     yeet24ShamanParams = {
@@ -209,14 +220,17 @@ describe("Yeet24ShamanModule", function () {
       "yeet24ShamanParams endTime",
       await time.latest(),
       yeet24ShamanParams.endTimeInSeconds,
-      Number(yeet24ShamanParams.endTimeInSeconds) > await time.latest()
+      Number(yeet24ShamanParams.endTimeInSeconds) > (await time.latest()),
     );
 
     weth = (await ethers.getContractAt("WETH", WETH.address, signer)) as WETH;
     const wethDepositTx = await weth.deposit({ value: ethers.utils.parseEther("10") });
     await wethDepositTx.wait();
 
-    nonFungiblePositionManager = (await ethers.getContractAt("INonfungiblePositionManager", nftpManager.address)) as INonfungiblePositionManager;
+    nonFungiblePositionManager = (await ethers.getContractAt(
+      "INonfungiblePositionManager",
+      nftpManager.address,
+    )) as INonfungiblePositionManager;
 
     // ========================
 
@@ -226,7 +240,6 @@ describe("Yeet24ShamanModule", function () {
     // ========================
 
     ///////////////////////////////////////////
-
 
     // // NOTICE: Fund the DAO Safe so it can pay for relayer fees
     // await signer.sendTransaction({
@@ -255,8 +268,6 @@ describe("Yeet24ShamanModule", function () {
     // await expect(tx_accept_control)
     //   .to.emit(l1SplitMain, "ControlTransfer")
     //   .withArgs(l1SplitAddress, users.owner.address, l1RegistryAddress);
-
-    
 
     // // NOTICE: DAO action proposal to add replica to main registry
     // const networkRegistry = {
@@ -316,9 +327,7 @@ describe("Yeet24ShamanModule", function () {
 
     let summonParams: Array<string | string[]>;
 
-
     beforeEach(async function () {
-
       predictedBaalAddress = await calculateBaalAddress({
         yeet24Summoner: summoner.address,
         saltNonce,
@@ -353,22 +362,22 @@ describe("Yeet24ShamanModule", function () {
         avatarAddress: predictedAvatarAddress,
         daoName: "Yeet24",
         lootConfig: {
-            singleton: govLoot.address as `0x${string}`,
-            tokenSymbol: "LMEME",
-            paused: true,
+          singleton: govLoot.address as `0x${string}`,
+          tokenSymbol: "LMEME",
+          paused: true,
         },
         metadataConfigParams: {
-            ...defaultBaalMetadata,
-            daoId: predictedBaalAddress as `0x${string}`,
-            authorAddress: users.owner.address as `0x${string}`,
-            posterAddress: poster.address,
+          ...defaultBaalMetadata,
+          daoId: predictedBaalAddress as `0x${string}`,
+          authorAddress: users.owner.address as `0x${string}`,
+          posterAddress: poster.address,
         },
         saltNonce,
         shamanZodiacModuleAddress: predictedYeet24ShamanAddress,
         sharesConfig: {
-            singleton: shares.address as `0x${string}`,
-            tokenSymbol: "SMEME",
-            paused: true,
+          singleton: shares.address as `0x${string}`,
+          tokenSymbol: "SMEME",
+          paused: true,
         },
         summonParams: DEFAULT_SUMMON_VALUES,
         yeet24Params: yeet24ShamanParams,
@@ -377,66 +386,66 @@ describe("Yeet24ShamanModule", function () {
         yeeterSingleton,
       });
 
-    //   // Syncing a batch of members
-    //   const newMembers = sampleSplit.map((memberSplit: SampleSplit) => memberSplit.address);
-    //   const activityMultipliers = sampleSplit.map((memberSplit: SampleSplit) => memberSplit.activityMultiplier);
-    //   const startDates = sampleSplit.map((memberSplit: SampleSplit) => memberSplit.startDateSeconds);
-    //   const chainIds = [replicaChainId];
-    //   const relayerFees = [defaultRelayerFee];
-    //   const totalValue = relayerFees.reduce((a: BigNumber, b: BigNumber) => a.add(b), BigNumber.from(0));
+      //   // Syncing a batch of members
+      //   const newMembers = sampleSplit.map((memberSplit: SampleSplit) => memberSplit.address);
+      //   const activityMultipliers = sampleSplit.map((memberSplit: SampleSplit) => memberSplit.activityMultiplier);
+      //   const startDates = sampleSplit.map((memberSplit: SampleSplit) => memberSplit.startDateSeconds);
+      //   const chainIds = [replicaChainId];
+      //   const relayerFees = [defaultRelayerFee];
+      //   const totalValue = relayerFees.reduce((a: BigNumber, b: BigNumber) => a.add(b), BigNumber.from(0));
 
-    //   // NOTICE: set the block timestamp to a month before cutoff date
-    //   await time.setNextBlockTimestamp(
-    //     Date.parse("2023-06-01T00:00:00.000-05:00") / 1000 -
-    //       defaultDAOSettings.VOTING_PERIOD_IN_SECONDS * 2 - // voting + grace period before execution
-    //       3, // 3 actions / second - submit proposal -> vote -> execute
-    //   );
+      //   // NOTICE: set the block timestamp to a month before cutoff date
+      //   await time.setNextBlockTimestamp(
+      //     Date.parse("2023-06-01T00:00:00.000-05:00") / 1000 -
+      //       defaultDAOSettings.VOTING_PERIOD_IN_SECONDS * 2 - // voting + grace period before execution
+      //       3, // 3 actions / second - submit proposal -> vote -> execute
+      //   );
 
-    //   // NOTICE: Register a new batch of members via the DAO
-    //   const newBatchEncoded = l1NetworkRegistry.interface.encodeFunctionData("syncBatchNewMembers", [
-    //     newMembers,
-    //     activityMultipliers,
-    //     startDates,
-    //     chainIds,
-    //     relayerFees,
-    //   ]);
-    //   // NOTICE: mintShares to new members. Just a subset at it will hit the block gas limit
-    //   const mintSharesEncoded = baal.interface.encodeFunctionData("mintShares", [
-    //     newMembers.slice(0, batchSize),
-    //     newMembers.map(() => parseEther("1")).slice(0, batchSize),
-    //   ]);
-    //   const encodedAction = encodeMultiAction(
-    //     multisend,
-    //     [mintSharesEncoded, newBatchEncoded],
-    //     [baal.address, l1NetworkRegistry.address],
-    //     [BigNumber.from(0), totalValue],
-    //     [0, 0],
-    //   );
-    //   const tx_batch = await submitAndProcessProposal({
-    //     baal,
-    //     encodedAction,
-    //     proposal,
-    //     daoSettings: defaultDAOSettings,
-    //   });
-    //   const action = l2NetworkRegistry.interface.getSighash("batchNewMembers(address[],uint32[],uint32[])");
-    //   await expect(tx_batch)
-    //     .to.emit(l2NetworkRegistry, "SyncActionPerformed")
-    //     .withArgs(anyValue, parentDomainId, action, true, l1NetworkRegistry.address);
+      //   // NOTICE: Register a new batch of members via the DAO
+      //   const newBatchEncoded = l1NetworkRegistry.interface.encodeFunctionData("syncBatchNewMembers", [
+      //     newMembers,
+      //     activityMultipliers,
+      //     startDates,
+      //     chainIds,
+      //     relayerFees,
+      //   ]);
+      //   // NOTICE: mintShares to new members. Just a subset at it will hit the block gas limit
+      //   const mintSharesEncoded = baal.interface.encodeFunctionData("mintShares", [
+      //     newMembers.slice(0, batchSize),
+      //     newMembers.map(() => parseEther("1")).slice(0, batchSize),
+      //   ]);
+      //   const encodedAction = encodeMultiAction(
+      //     multisend,
+      //     [mintSharesEncoded, newBatchEncoded],
+      //     [baal.address, l1NetworkRegistry.address],
+      //     [BigNumber.from(0), totalValue],
+      //     [0, 0],
+      //   );
+      //   const tx_batch = await submitAndProcessProposal({
+      //     baal,
+      //     encodedAction,
+      //     proposal,
+      //     daoSettings: defaultDAOSettings,
+      //   });
+      //   const action = l2NetworkRegistry.interface.getSighash("batchNewMembers(address[],uint32[],uint32[])");
+      //   await expect(tx_batch)
+      //     .to.emit(l2NetworkRegistry, "SyncActionPerformed")
+      //     .withArgs(anyValue, parentDomainId, action, true, l1NetworkRegistry.address);
 
-    //   // NOTICE: mintShares to the rest of new members on a separate proposal
-    //   const mintShares2Encoded = baal.interface.encodeFunctionData("mintShares", [
-    //     newMembers.slice(batchSize),
-    //     newMembers.map(() => parseEther("1")).slice(batchSize),
-    //   ]);
-    //   const tx_batch2 = await submitAndProcessProposal({
-    //     baal,
-    //     encodedAction: encodeMultiAction(multisend, [mintShares2Encoded], [baal.address], [BigNumber.from(0)], [0]),
-    //     proposal,
-    //     daoSettings: defaultDAOSettings,
-    //   });
-    //   await expect(tx_batch2).to.emit(baal, "ProcessProposal").withArgs(anyValue, true, false);
-    //   // const blockNo = await time.latestBlock();
-    //   // console.log('block timestamp', (await ethers.provider.getBlock(blockNo)).timestamp);
+      //   // NOTICE: mintShares to the rest of new members on a separate proposal
+      //   const mintShares2Encoded = baal.interface.encodeFunctionData("mintShares", [
+      //     newMembers.slice(batchSize),
+      //     newMembers.map(() => parseEther("1")).slice(batchSize),
+      //   ]);
+      //   const tx_batch2 = await submitAndProcessProposal({
+      //     baal,
+      //     encodedAction: encodeMultiAction(multisend, [mintShares2Encoded], [baal.address], [BigNumber.from(0)], [0]),
+      //     proposal,
+      //     daoSettings: defaultDAOSettings,
+      //   });
+      //   await expect(tx_batch2).to.emit(baal, "ProcessProposal").withArgs(anyValue, true, false);
+      //   // const blockNo = await time.latestBlock();
+      //   // console.log('block timestamp', (await ethers.provider.getBlock(blockNo)).timestamp);
     });
 
     it("Should be able to setup a DAO with Yeeter24 shaman modules", async () => {
@@ -448,35 +457,35 @@ describe("Yeet24ShamanModule", function () {
         summonParams[4] as string,
       );
 
-      await expect(summonTx).to.emit(baalSummoner, "DeployBaalSafe").withArgs(
-        predictedAvatarAddress,
-        predictedBaalAddress,
-      );
-      await expect(summonTx).to.emit(baalSummoner, "SummonBaal").withArgs(
-        predictedBaalAddress,
-        anyValue,
-        anyValue,
-        predictedAvatarAddress,
-        ethers.constants.AddressZero,
-        "1"
-      );
+      await expect(summonTx)
+        .to.emit(baalSummoner, "DeployBaalSafe")
+        .withArgs(predictedAvatarAddress, predictedBaalAddress);
+      await expect(summonTx)
+        .to.emit(baalSummoner, "SummonBaal")
+        .withArgs(predictedBaalAddress, anyValue, anyValue, predictedAvatarAddress, ethers.constants.AddressZero, "1");
       const avatarContract = (await ethers.getContractAt("GnosisSafe", predictedAvatarAddress)) as GnosisSafe;
       const baalContract = (await ethers.getContractAt("Baal", predictedBaalAddress)) as Baal;
 
-      await expect(summonTx).to.emit(baalContract, "ShamanSet").withArgs(predictedYeet24ShamanAddress, YEET24_SHAMAN_PERMISSIONS);      
+      await expect(summonTx)
+        .to.emit(baalContract, "ShamanSet")
+        .withArgs(predictedYeet24ShamanAddress, YEET24_SHAMAN_PERMISSIONS);
       await expect(summonTx).to.emit(avatarContract, "EnabledModule").withArgs(predictedYeet24ShamanAddress);
 
-      const yeet24Shaman = (await ethers.getContractAt("Yeet24ShamanModule", predictedYeet24ShamanAddress)) as Yeet24ShamanModule;
+      const yeet24Shaman = (await ethers.getContractAt(
+        "Yeet24ShamanModule",
+        predictedYeet24ShamanAddress,
+      )) as Yeet24ShamanModule;
       // Setup(address indexed baal, address indexed vault, uint256 threshold, uint256 expiration, uint256 poolFee);
-      await expect(summonTx).to.emit(yeet24Shaman, "Setup").withArgs(
-        predictedBaalAddress,
-        predictedAvatarAddress,
-        yeet24ShamanParams.goal,
-        yeet24ShamanParams.endTimeInSeconds,
-        yeet24ShamanParams.poolFee,
-        yeet24ShamanParams.boostRewardsPoolAddress,
-      );
-
+      await expect(summonTx)
+        .to.emit(yeet24Shaman, "Setup")
+        .withArgs(
+          predictedBaalAddress,
+          predictedAvatarAddress,
+          yeet24ShamanParams.goal,
+          yeet24ShamanParams.endTimeInSeconds,
+          yeet24ShamanParams.poolFee,
+          yeet24ShamanParams.boostRewardsPoolAddress,
+        );
     });
 
     it("Should be able to predict yeeter shaman address", async () => {
@@ -489,7 +498,7 @@ describe("Yeet24ShamanModule", function () {
         shamanTemplate: yeeterSingleton,
       });
       // console.log("yeeterShamanSalt", yeeterShamanSalt);
-  
+
       const predictedYeeterShamanAddress = await calculateHOSShamanAddress({
         saltNonce: yeeterShamanSalt,
         shamanSingleton: yeeterSingleton,
@@ -505,9 +514,10 @@ describe("Yeet24ShamanModule", function () {
         summonParams[4] as string,
       );
       const baalContract = (await ethers.getContractAt("Baal", predictedBaalAddress)) as Baal;
-      await expect(summonTx).to.emit(baalContract, "ShamanSet").withArgs(predictedYeeterShamanAddress, YEETER_SHAMAN_PERMISSIONS);
+      await expect(summonTx)
+        .to.emit(baalContract, "ShamanSet")
+        .withArgs(predictedYeeterShamanAddress, YEETER_SHAMAN_PERMISSIONS);
       // TODO: yeeter setup event?
-
     });
 
     // it("Should sync update seconds active and update splits prior distribution", async () => {
@@ -871,7 +881,7 @@ describe("Yeet24ShamanModule", function () {
     let sharesToken: Shares;
     let govLootToken: GovernorLoot;
 
-    beforeEach(async() => {
+    beforeEach(async () => {
       signer = await ethers.getSigner(users.owner.address);
 
       const predictedBaalAddress = await calculateBaalAddress({
@@ -913,7 +923,7 @@ describe("Yeet24ShamanModule", function () {
         shamanTemplate: yeeterSingleton,
       });
       // console.log("yeeterShamanSalt", yeeterShamanSalt);
-  
+
       const predictedYeeterShamanAddress = await calculateHOSShamanAddress({
         saltNonce: yeeterShamanSalt,
         shamanSingleton: yeeterSingleton,
@@ -927,22 +937,22 @@ describe("Yeet24ShamanModule", function () {
         avatarAddress: predictedAvatarAddress,
         daoName: "Yeet24",
         lootConfig: {
-            singleton: govLoot.address as `0x${string}`,
-            tokenSymbol: "LMEME",
-            paused: true,
+          singleton: govLoot.address as `0x${string}`,
+          tokenSymbol: "LMEME",
+          paused: true,
         },
         metadataConfigParams: {
-            ...defaultBaalMetadata,
-            daoId: predictedBaalAddress as `0x${string}`,
-            authorAddress: users.owner.address as `0x${string}`,
-            posterAddress: poster.address,
+          ...defaultBaalMetadata,
+          daoId: predictedBaalAddress as `0x${string}`,
+          authorAddress: users.owner.address as `0x${string}`,
+          posterAddress: poster.address,
         },
         saltNonce,
         shamanZodiacModuleAddress: predictedYeet24ShamanAddress,
         sharesConfig: {
-            singleton: shares.address as `0x${string}`,
-            tokenSymbol: "SMEME",
-            paused: true,
+          singleton: shares.address as `0x${string}`,
+          tokenSymbol: "SMEME",
+          paused: true,
         },
         summonParams: DEFAULT_SUMMON_VALUES,
         yeet24Params: yeet24ShamanParams,
@@ -959,7 +969,11 @@ describe("Yeet24ShamanModule", function () {
       );
       avatar = (await ethers.getContractAt("GnosisSafe", predictedAvatarAddress, signer)) as GnosisSafe;
       baal = (await ethers.getContractAt("Baal", predictedBaalAddress, signer)) as Baal;
-      yeet24Shaman = (await ethers.getContractAt("Yeet24ShamanModule", predictedYeet24ShamanAddress, signer)) as Yeet24ShamanModule;
+      yeet24Shaman = (await ethers.getContractAt(
+        "Yeet24ShamanModule",
+        predictedYeet24ShamanAddress,
+        signer,
+      )) as Yeet24ShamanModule;
       yeeterShaman = (await ethers.getContractAt("EthYeeter", predictedYeeterShamanAddress, signer)) as EthYeeter;
       govLootToken = (await ethers.getContractAt("GovernorLoot", await baal.lootToken(), signer)) as GovernorLoot;
       sharesToken = (await ethers.getContractAt("Shares", await baal.sharesToken(), signer)) as Shares;
@@ -971,8 +985,10 @@ describe("Yeet24ShamanModule", function () {
       expect(await yeet24Shaman.goal()).to.be.equal(yeet24ShamanParams.goal);
       expect(await yeet24Shaman.goalAchieved()).to.be.false;
       expect(await yeet24Shaman.endTime()).to.be.equal(yeet24ShamanParams.endTimeInSeconds);
-      expect(await yeet24Shaman.poolFee()).to.be.equal(yeet24ShamanParams.poolFee)
-      expect(await yeet24Shaman.nonfungiblePositionManager()).to.be.equal(yeet24ShamanParams.nonFungiblePositionManager);
+      expect(await yeet24Shaman.poolFee()).to.be.equal(yeet24ShamanParams.poolFee);
+      expect(await yeet24Shaman.nonfungiblePositionManager()).to.be.equal(
+        yeet24ShamanParams.nonFungiblePositionManager,
+      );
       expect(await yeet24Shaman.weth()).to.be.equal(yeet24ShamanParams.weth9);
       expect(await yeet24Shaman.boostRewardsPool()).to.be.equal(ethers.constants.AddressZero);
 
@@ -1015,16 +1031,12 @@ describe("Yeet24ShamanModule", function () {
 
     it("Should not be able to execute admin function if not vault", async () => {
       await expect(
-        yeet24Shaman.createPoolAndMintPosition(
-          sharesToken.address,
-          weth.address,
-          "0",
-          "0"
-        )
+        yeet24Shaman.createPoolAndMintPosition(sharesToken.address, weth.address, "0", "0"),
       ).to.be.revertedWithCustomError(yeet24Shaman, "Yeet24ShamanModule__BaalVaultOnly");
-      await expect(
-        yeet24Shaman.withdrawShamanBalance()
-      ).to.be.revertedWithCustomError(yeet24Shaman, "Yeet24ShamanModule__BaalVaultOnly");
+      await expect(yeet24Shaman.withdrawShamanBalance()).to.be.revertedWithCustomError(
+        yeet24Shaman,
+        "Yeet24ShamanModule__BaalVaultOnly",
+      );
     });
 
     it("Should accept yeets during active period", async () => {
@@ -1037,21 +1049,20 @@ describe("Yeet24ShamanModule", function () {
       });
       const isShares = await yeeterShaman.isShares();
       const mintedTokens = tx.value.mul(yeeterShamanParams.multiplier);
-      
+
       // OnReceived(msg.sender, msg.value, _shares, address(baal), vault, message)
-      await expect(tx).to.emit(yeeterShaman, "OnReceived").withArgs(
-        signer.address,
-        tx.value,
-        mintedTokens,
-        baal.address,
-        avatar.address,
-        ""
-      );
+      await expect(tx)
+        .to.emit(yeeterShaman, "OnReceived")
+        .withArgs(signer.address, tx.value, mintedTokens, baal.address, avatar.address, "");
       if (isShares) {
-        expect(tx).to.emit(shares, "Transfer").withArgs(ethers.constants.AddressZero, signer.address, mintedTokens);
+        await expect(tx)
+          .to.emit(sharesToken, "Transfer")
+          .withArgs(ethers.constants.AddressZero, signer.address, mintedTokens);
         expect(await sharesToken.balanceOf(signer.address)).to.be.equal(mintedTokens);
       } else {
-        expect(tx).to.emit(govLootToken, "Transfer").withArgs(ethers.constants.AddressZero, signer.address, mintedTokens);
+        await expect(tx)
+          .to.emit(govLootToken, "Transfer")
+          .withArgs(ethers.constants.AddressZero, signer.address, mintedTokens);
         expect(await govLootToken.balanceOf(signer.address)).to.be.equal(mintedTokens);
       }
       const feesCut = tx.value.div(1e6).mul(totalFees);
@@ -1066,9 +1077,12 @@ describe("Yeet24ShamanModule", function () {
         "Time state",
         await time.latest(),
         (await yeet24Shaman.endTime()).toString(),
-        (await yeet24Shaman.endTime()).gt(await time.latest())
+        (await yeet24Shaman.endTime()).gt(await time.latest()),
       );
-      await expect(yeet24Shaman.execute()).to.be.revertedWithCustomError(yeet24Shaman, "Yeet24ShamanModule__YeetNotFinished");
+      await expect(yeet24Shaman.execute()).to.be.revertedWithCustomError(
+        yeet24Shaman,
+        "Yeet24ShamanModule__YeetNotFinished",
+      );
     });
 
     it("Should fail execution if yeeter campaign has not met threshold", async () => {
@@ -1076,7 +1090,7 @@ describe("Yeet24ShamanModule", function () {
         "Time state",
         await time.latest(),
         (await yeet24Shaman.endTime()).toString(),
-        (await yeet24Shaman.endTime()).gt(await time.latest())
+        (await yeet24Shaman.endTime()).gt(await time.latest()),
       );
       const currentYeetBalance = await ethers.provider.getBalance(yeeterShaman.address);
       const currentYeet24Balance = await ethers.provider.getBalance(yeet24Shaman.address);
@@ -1086,7 +1100,9 @@ describe("Yeet24ShamanModule", function () {
 
       await time.setNextBlockTimestamp(BigNumber.from(yeet24ShamanParams.endTimeInSeconds).add(1));
       const tx = await yeet24Shaman.execute();
-      await expect(tx).to.emit(yeet24Shaman, "ExecutionFailed").withArgs(currentYeetBalance, currentYeet24Balance, transferSuccess);
+      await expect(tx)
+        .to.emit(yeet24Shaman, "ExecutionFailed")
+        .withArgs(currentYeetBalance, currentYeet24Balance, transferSuccess);
       expect(await yeet24Shaman.executed()).to.be.true;
       expect(await yeet24Shaman.goalAchieved()).to.be.false;
       expect(await yeet24Shaman.balance()).to.be.equal(0);
@@ -1096,18 +1112,17 @@ describe("Yeet24ShamanModule", function () {
       let signer = await ethers.getSigner(users.owner.address);
       const tx = await signer.sendTransaction({
         to: yeet24Shaman.address,
-        value: ethers.utils.parseEther("1")
+        value: ethers.utils.parseEther("1"),
       });
       await tx.wait();
-      
+
       ///// impersonating Baal Vault
       await setBalance(avatar.address, ethers.utils.parseEther("1"));
       await impersonateAccount(avatar.address);
       signer = await ethers.getSigner(avatar.address);
-      await expect(
-        yeet24Shaman.connect(signer).withdrawShamanBalance()
-      ).to.be.revertedWithCustomError(yeet24Shaman, "Yeet24ShamanModule__TransferFailed")
-      .withArgs("0x");
+      await expect(yeet24Shaman.connect(signer).withdrawShamanBalance())
+        .to.be.revertedWithCustomError(yeet24Shaman, "Yeet24ShamanModule__TransferFailed")
+        .withArgs("0x");
       await stopImpersonatingAccount(avatar.address);
     });
 
@@ -1128,10 +1143,9 @@ describe("Yeet24ShamanModule", function () {
       await setBalance(avatar.address, ethers.utils.parseEther("1"));
       await impersonateAccount(avatar.address);
       signer = await ethers.getSigner(avatar.address);
-      await expect(
-        yeet24Shaman.connect(signer).withdrawShamanBalance()
-      ).emit(yeet24Shaman, "ShamanBalanceWithdrawn")
-      .withArgs(rewards);
+      await expect(yeet24Shaman.connect(signer).withdrawShamanBalance())
+        .emit(yeet24Shaman, "ShamanBalanceWithdrawn")
+        .withArgs(rewards);
       await stopImpersonatingAccount(avatar.address);
     });
 
@@ -1139,13 +1153,13 @@ describe("Yeet24ShamanModule", function () {
       // mock yeet24 weth and sharesToken balance
       const sharesToMint = ethers.utils.parseEther("10");
       const wethBalance = ethers.utils.parseEther("1");
-      expect (await sharesToken.balanceOf(yeet24Shaman.address)).to.be.equal(0);
-      expect (await weth.balanceOf(yeet24Shaman.address)).to.be.equal(0);
-      
+      expect(await sharesToken.balanceOf(yeet24Shaman.address)).to.be.equal(0);
+      expect(await weth.balanceOf(yeet24Shaman.address)).to.be.equal(0);
+
       // yeet24 gets some WETH
       const txWethTransfer = await weth.transfer(yeet24Shaman.address, wethBalance);
       await txWethTransfer.wait();
-      expect (await weth.balanceOf(yeet24Shaman.address)).to.be.equal(wethBalance);
+      expect(await weth.balanceOf(yeet24Shaman.address)).to.be.equal(wethBalance);
 
       ///// impersonating Yeet24ShamanModule as Manager shaman
       await setBalance(yeet24Shaman.address, ethers.utils.parseEther("1"));
@@ -1164,18 +1178,14 @@ describe("Yeet24ShamanModule", function () {
       await stopImpersonatingAccount(yeet24Shaman.address);
       ///// stop impersonating
 
-
       ///// impersonating Baal Vault
       await setBalance(avatar.address, ethers.utils.parseEther("1"));
       await impersonateAccount(avatar.address);
       signer = await ethers.getSigner(avatar.address);
 
-      const tx = await yeet24Shaman.connect(signer).createPoolAndMintPosition(
-        sharesToken.address,
-        weth.address,
-        sharesToMint,
-        wethBalance
-      );
+      const tx = await yeet24Shaman
+        .connect(signer)
+        .createPoolAndMintPosition(sharesToken.address, weth.address, sharesToMint, wethBalance);
 
       // UniswapPositionCreated(pool, tokenId, sqrtPriceX96, liquidity, amount0, amount1)
       await expect(tx).to.emit(yeet24Shaman, "UniswapPositionCreated");
@@ -1189,7 +1199,7 @@ describe("Yeet24ShamanModule", function () {
         "Time state",
         await time.latest(),
         (await yeet24Shaman.endTime()).toString(),
-        (await yeet24Shaman.endTime()).gt(await time.latest())
+        (await yeet24Shaman.endTime()).gt(await time.latest()),
       );
       let signer = await ethers.getSigner(users.alice.address);
       let yeet_tx = await signer.sendTransaction({
@@ -1220,18 +1230,13 @@ describe("Yeet24ShamanModule", function () {
 
       const tx = await yeet24Shaman.execute();
 
-      await expect(tx).to.emit(yeet24Shaman, "Executed").withArgs(
-        await baal.sharesToken(),
-        sharesSupplyBefore,
-        collectedAmount,
-        boostRewards,
-      );
+      await expect(tx)
+        .to.emit(yeet24Shaman, "Executed")
+        .withArgs(await baal.sharesToken(), sharesSupplyBefore, collectedAmount, boostRewards);
       // ManagerShaman action: mint 100% shares to this contract. this doubles the total shares
-      await expect(tx).to.emit(sharesToken, "Transfer").withArgs(
-        ethers.constants.AddressZero,
-        yeet24Shaman.address,
-        sharesSupplyBefore
-      );
+      await expect(tx)
+        .to.emit(sharesToken, "Transfer")
+        .withArgs(ethers.constants.AddressZero, yeet24Shaman.address, sharesSupplyBefore);
       expect(await sharesToken.totalSupply()).to.be.equal(sharesSupplyBefore.mul(2));
       // minted shares are used to mint UniV3 position
       expect(await sharesToken.balanceOf(yeet24Shaman.address)).to.be.equal(0);
@@ -1250,11 +1255,7 @@ describe("Yeet24ShamanModule", function () {
       //  - wrap ETH collected in vault
       await expect(tx).to.emit(weth, "Deposit").withArgs(avatar.address, collectedAmount);
       //  - transfer WETH from vault to shaman
-      await expect(tx).to.emit(weth, "Transfer").withArgs(
-        avatar.address,
-        yeet24Shaman.address,
-        collectedAmount
-      );
+      await expect(tx).to.emit(weth, "Transfer").withArgs(avatar.address, yeet24Shaman.address, collectedAmount);
       // transferred weth is used to mint UniV3 position
       expect(await weth.balanceOf(yeet24Shaman.address)).to.be.equal(0);
       //  - call shaman.createPoolAndMintPosition
@@ -1327,17 +1328,11 @@ describe("Yeet24ShamanModule", function () {
       });
       // console.log("predictedYeet24ShamanAddress", predictedYeet24ShamanAddress);
 
-      const feeAmounts = [
-        ...yeeterShamanParams.feeAmounts,
-        boostFees,
-      ];
+      const feeAmounts = [...yeeterShamanParams.feeAmounts, boostFees];
 
       const customYeeterShamanParams = {
         ...yeeterShamanParams,
-        feeRecipients: [
-          ...yeeterShamanParams.feeRecipients,
-          predictedYeet24ShamanAddress as `0x${string}`,
-        ],
+        feeRecipients: [...yeeterShamanParams.feeRecipients, predictedYeet24ShamanAddress as `0x${string}`],
         feeAmounts,
       };
 
@@ -1350,7 +1345,7 @@ describe("Yeet24ShamanModule", function () {
         shamanTemplate: yeeterSingleton,
       });
       // console.log("yeeterShamanSalt", yeeterShamanSalt);
-  
+
       const predictedYeeterShamanAddress = await calculateHOSShamanAddress({
         saltNonce: yeeterShamanSalt,
         shamanSingleton: yeeterSingleton,
@@ -1364,22 +1359,22 @@ describe("Yeet24ShamanModule", function () {
         avatarAddress: predictedAvatarAddress,
         daoName: "Yeet24",
         lootConfig: {
-            singleton: govLoot.address as `0x${string}`,
-            tokenSymbol: "LMEME",
-            paused: true,
+          singleton: govLoot.address as `0x${string}`,
+          tokenSymbol: "LMEME",
+          paused: true,
         },
         metadataConfigParams: {
-            ...defaultBaalMetadata,
-            daoId: predictedBaalAddress as `0x${string}`,
-            authorAddress: users.owner.address as `0x${string}`,
-            posterAddress: poster.address,
+          ...defaultBaalMetadata,
+          daoId: predictedBaalAddress as `0x${string}`,
+          authorAddress: users.owner.address as `0x${string}`,
+          posterAddress: poster.address,
         },
         saltNonce,
         shamanZodiacModuleAddress: predictedYeet24ShamanAddress,
         sharesConfig: {
-            singleton: shares.address as `0x${string}`,
-            tokenSymbol: "SMEME",
-            paused: true,
+          singleton: shares.address as `0x${string}`,
+          tokenSymbol: "SMEME",
+          paused: true,
         },
         summonParams: DEFAULT_SUMMON_VALUES,
         yeet24Params: customYeet24ShamanParams,
@@ -1396,7 +1391,11 @@ describe("Yeet24ShamanModule", function () {
       );
       avatar = (await ethers.getContractAt("GnosisSafe", predictedAvatarAddress, signer)) as GnosisSafe;
       baal = (await ethers.getContractAt("Baal", predictedBaalAddress, signer)) as Baal;
-      yeet24Shaman = (await ethers.getContractAt("Yeet24ShamanModule", predictedYeet24ShamanAddress, signer)) as Yeet24ShamanModule;
+      yeet24Shaman = (await ethers.getContractAt(
+        "Yeet24ShamanModule",
+        predictedYeet24ShamanAddress,
+        signer,
+      )) as Yeet24ShamanModule;
       yeeterShaman = (await ethers.getContractAt("EthYeeter", predictedYeeterShamanAddress, signer)) as EthYeeter;
       govLootToken = (await ethers.getContractAt("GovernorLoot", await baal.lootToken(), signer)) as GovernorLoot;
       sharesToken = (await ethers.getContractAt("Shares", await baal.sharesToken(), signer)) as Shares;
@@ -1414,8 +1413,7 @@ describe("Yeet24ShamanModule", function () {
         });
         await tx.wait();
       }
-      yeetedValue = BigNumber.from(yeeterShamanParams.minTribute)
-        .mul(BigNumber.from(yeetUsers.length));
+      yeetedValue = BigNumber.from(yeeterShamanParams.minTribute).mul(BigNumber.from(yeetUsers.length));
     });
 
     it("Should have everything setup", async () => {
@@ -1438,10 +1436,10 @@ describe("Yeet24ShamanModule", function () {
       expect(await ethers.provider.getBalance(avatar.address)).to.be.equal(receivedAmount);
       expect(await ethers.provider.getBalance(yeet24Shaman.address)).to.be.equal(boostRewardsFromFees);
     });
-    
+
     it("Should be able to receive boosting funds from a rewards pool", async () => {
       const poolBalanceBefore = await ethers.provider.getBalance(boostRewardsPoolSafe.address);
-      const yeet24BalanceBefore = await ethers.provider.getBalance(yeet24Shaman.address)
+      const yeet24BalanceBefore = await ethers.provider.getBalance(yeet24Shaman.address);
       const accounts = config.networks.hardhat.accounts as any;
       const index = 0; // first wallet, increment for next wallets
       const wallet1 = ethers.Wallet.fromMnemonic(accounts.mnemonic, accounts.path + `/${index}`);
@@ -1455,9 +1453,13 @@ describe("Yeet24ShamanModule", function () {
       });
 
       expect(await ethers.provider.getBalance(boostRewardsPoolSafe.address)).to.be.equal(0);
-      expect(await ethers.provider.getBalance(yeet24Shaman.address)).to.be.equal(yeet24BalanceBefore.add(poolBalanceBefore));
+      expect(await ethers.provider.getBalance(yeet24Shaman.address)).to.be.equal(
+        yeet24BalanceBefore.add(poolBalanceBefore),
+      );
 
-      await expect(tx).to.emit(yeet24Shaman, "BoostRewardsDeposited").withArgs(boostRewardsPoolSafe.address, poolBalanceBefore);
+      await expect(tx)
+        .to.emit(yeet24Shaman, "BoostRewardsDeposited")
+        .withArgs(boostRewardsPoolSafe.address, poolBalanceBefore);
     });
 
     it("Should fail to meet goal and forward boosted fund fees to to the boost rewards pool", async () => {
@@ -1471,15 +1473,15 @@ describe("Yeet24ShamanModule", function () {
       expect(await ethers.provider.getBalance(avatar.address)).to.be.lessThan(yeet24ShamanParams.goal);
 
       const tx = await yeet24Shaman.execute();
-      
+
       // ExecutionFailed(yeethBalance, boostRewards, transferSuccess);
       await expect(tx).to.emit(yeet24Shaman, "ExecutionFailed").withArgs(receivedAmount, boostRewardsFromFees, true);
       expect(await yeet24Shaman.executed()).to.be.true;
       expect(await yeet24Shaman.goalAchieved()).to.be.false;
       expect(await yeet24Shaman.balance()).to.be.equal(0);
-      expect(
-        await ethers.provider.getBalance(boostRewardsPoolSafe.address)
-      ).to.be.equal(rewardsPoolBalanceBefore.add(boostRewardsFromFees));
+      expect(await ethers.provider.getBalance(boostRewardsPoolSafe.address)).to.be.equal(
+        rewardsPoolBalanceBefore.add(boostRewardsFromFees),
+      );
       expect(await ethers.provider.getBalance(yeet24Shaman.address)).to.be.equal(0);
     });
 
@@ -1498,8 +1500,7 @@ describe("Yeet24ShamanModule", function () {
         await tx.wait();
       }
       const yeetBalance = yeetedValue.add(
-        BigNumber.from(yeeterShamanParams.minTribute)
-          .mul(BigNumber.from(yeetUsers.length))
+        BigNumber.from(yeeterShamanParams.minTribute).mul(BigNumber.from(yeetUsers.length)),
       );
 
       // add some boost rewards from pool
@@ -1523,11 +1524,10 @@ describe("Yeet24ShamanModule", function () {
 
       const feesCut = yeetBalance.div(1e6).mul(totalFees);
       const receivedAmount = yeetBalance.sub(feesCut).add(boostRewards); // NOTICE: yeetBalance + boostRewards
-      
-      
+
       const rewardsPoolBalanceBefore = await ethers.provider.getBalance(boostRewardsPoolSafe.address);
       const sharesSupplyBefore = await sharesToken.totalSupply();
-      
+
       // console.log("Calculated funds", yeetBalance.toString(), feesCut.toString(), boostRewards.toString(), receivedAmount.toString());
       // console.log("Goal", yeet24ShamanParams.goal.toString());
       // console.log("vault balance", (await ethers.provider.getBalance(avatar.address)).toString());
@@ -1541,20 +1541,15 @@ describe("Yeet24ShamanModule", function () {
       expect(await ethers.provider.getBalance(avatar.address)).to.be.greaterThanOrEqual(yeet24ShamanParams.goal);
 
       const tx = await yeet24Shaman.execute();
-      
+
       // ExecutionFailed(yeethBalance, boostRewards, transferSuccess);
-      await expect(tx).to.emit(yeet24Shaman, "Executed").withArgs(
-        await baal.sharesToken(),
-        sharesSupplyBefore,
-        receivedAmount,
-        boostRewards,
-      );
+      await expect(tx)
+        .to.emit(yeet24Shaman, "Executed")
+        .withArgs(await baal.sharesToken(), sharesSupplyBefore, receivedAmount, boostRewards);
       // ManagerShaman action: mint 100% shares to this contract. this doubles the total shares
-      await expect(tx).to.emit(sharesToken, "Transfer").withArgs(
-        ethers.constants.AddressZero,
-        yeet24Shaman.address,
-        sharesSupplyBefore
-      );
+      await expect(tx)
+        .to.emit(sharesToken, "Transfer")
+        .withArgs(ethers.constants.AddressZero, yeet24Shaman.address, sharesSupplyBefore);
       expect(await sharesToken.totalSupply()).to.be.equal(sharesSupplyBefore.mul(2));
       // minted shares are used to mint UniV3 position
       expect(await sharesToken.balanceOf(yeet24Shaman.address)).to.be.equal(0);
@@ -1574,11 +1569,7 @@ describe("Yeet24ShamanModule", function () {
       //  - wrap ETH collected in vault
       await expect(tx).to.emit(weth, "Deposit").withArgs(avatar.address, receivedAmount);
       //  - transfer WETH from vault to shaman
-      await expect(tx).to.emit(weth, "Transfer").withArgs(
-        avatar.address,
-        yeet24Shaman.address,
-        receivedAmount
-      );
+      await expect(tx).to.emit(weth, "Transfer").withArgs(avatar.address, yeet24Shaman.address, receivedAmount);
       // transferred weth is used to mint UniV3 position
       expect(await weth.balanceOf(yeet24Shaman.address)).to.be.equal(0);
       //  - call shaman.createPoolAndMintPosition

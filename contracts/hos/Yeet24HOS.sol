@@ -106,7 +106,6 @@ contract Yeet24HOS is HOSBase {
 
     /**
      * @dev sets up the already deployed claim shaman with init params
-     * shaman init params (address _nftAddress, address _registry, address _tbaImp, uint256 _perNft, uint256 _sharesPerNft)
      * @param initializationShamanParams shaman init params
      * @param shamans IShamans
      * @param baal address
@@ -127,7 +126,7 @@ contract Yeet24HOS is HOSBase {
         if (initShamanDeployParams.length != totalParams) revert Yeet24HOS__ParamSizeMismatch();
         address vault = IBaal(baal).avatar(); // fetch baal main treasury
         // shaman setup with dao address, vault address and initShamanParams
-        for (uint256 i; i < totalParams;) {
+        for (uint256 i; i < totalParams; ) {
             IShaman(shamans[i]).setup(baal, vault, initShamanDeployParams[i]);
             unchecked {
                 ++i;
