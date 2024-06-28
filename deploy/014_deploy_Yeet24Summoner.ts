@@ -88,7 +88,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
           bvSummonerAddress,
           moduleProxyFactoryAddress,
           [yeet24ShamanModule, yeeter, sharesToken, lootToken],
-          "DHYeet24ShamanSummoner.4",
+          "DHYeet24ShamanSummoner.5",
         ],
       },
     },

@@ -75,7 +75,7 @@ export const deploymentConfig: { [key: string]: Contracts & Ownable } = {
     btSummoner: "0x97Aaa5be8B38795245f1c38A883B44cccdfB3E11",
     sharesToken: "0xc650B598b095613cCddF0f49570FfA475175A5D5",
     lootToken: "0x59a7C71221d05e30b9d7981AB83f0A1700e51Af8", // gov loot
-    yeet24ShamanModule: "0x885F45A8F5227FC11f17a007cb058Bd8f4c858bE",
+    yeet24ShamanModule: "0xA4622192a896bf559191005b23eB13d367E494ce",
     yeeter: "0x8D60971eFf778966356c1cADD76d525E7B25cc6b",
     univ3NftPositionManager: "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1",
     weth: "0x4200000000000000000000000000000000000006",
@@ -116,7 +116,7 @@ export const deploymentConfig: { [key: string]: Contracts & Ownable } = {
     baalSummoner: "0xB2B3909661552942AE1115E9Fc99dF0BC93d71d0",
     bvSummoner: "0x763f5c2E59f997A6cC48Bf1228aBf61325244702",
     btSummoner: "0xD69e5B8F6FA0E5d94B93848700655A78DF24e387",
-    yeet24ShamanModule: "0x69eEA5adD040311C0aABb41C772423b87fadF32A",
+    yeet24ShamanModule: "0xdfDbf3639497a4B3598B51F852d0c94E6d8D8934",
     yeeter: "0x62ff4ca410e9e58f5ce8b2ad03695ef0ad990381",
     sharesToken: "0x52acf023d38A31f7e7bC92cCe5E68d36cC9752d6",
     lootToken: "0x8a4a9e36106ee290811b89e06e2fafe913507965", // gov loot
