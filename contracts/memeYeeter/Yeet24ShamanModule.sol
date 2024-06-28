@@ -15,6 +15,8 @@ import { INonfungiblePositionManager } from "../libs/INonfungiblePositionManager
 import { IWETH9 } from "../libs/IWETH9.sol";
 import { CustomMath } from "../libraries/CustomMath.sol";
 
+// import "hardhat/console.sol";
+
 // @notice Provided end time is invalid
 error Yeet24ShamanModule__InvalidEndTime();
 // @notice Provided pool fee is not used by UniV3
@@ -252,6 +254,28 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
     }
 
     /**
+     * @notice Transfer/burn any remainder after creating a liquidity position
+     * @dev if token is the baal shares token, remainder should be burned
+     * @param _token token address
+     * @param _to recipient addres
+     * @param _value value to be transferred
+     * @param _isSharesToken whether or not the token is the baal shares token
+     */
+    function _transferRemainder(address _token, address _to, uint256 _value, bool _isSharesToken) internal {
+        if (_isSharesToken) {
+            address[] memory from = new address[](1);
+            from[0] = address(this);
+            uint256[] memory amounts = new uint256[](1);
+            amounts[0] = _value;
+
+            // ManagerShaman action: burn shares hold in the contract
+            _baal.burnShares(from, amounts);
+        } else {
+            TransferHelper.safeTransfer(_token, _to, _value);
+        }
+    }
+
+    /**
      * @notice Creates a UniV3Pool and mint an  initial liquidity position
      * @inheritdoc IYeet24Shaman
      */
@@ -261,15 +285,16 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         uint256 liquidityAmount0,
         uint256 liquidityAmount1
     ) external baalVaultOnly {
+        bool isSharesToken0 = token0 < token1;
         // Ensure correct order of tokens based on their addresses
-        (token0, token1, liquidityAmount0, liquidityAmount1) = token0 < token1
+        (token0, token1, liquidityAmount0, liquidityAmount1) = isSharesToken0
             ? (token0, token1, liquidityAmount0, liquidityAmount1)
             : (token1, token0, liquidityAmount1, liquidityAmount0);
         // console.log("Tokens", token0, token1);
         // console.log("Liquidity", liquidityAmount0, liquidityAmount1);
 
         // calculate the sqrtPriceX96
-        uint160 sqrtPriceX96 = CustomMath.calculateSqrtPriceX96(liquidityAmount0, liquidityAmount0);
+        uint160 sqrtPriceX96 = CustomMath.calculateSqrtPriceX96(liquidityAmount0, liquidityAmount1);
         // console.log("sqrtPriceX96", sqrtPriceX96);
 
         // Create and initialize the pool if necessary
@@ -303,24 +328,28 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             mintParams
         );
         positionId = tokenId;
+        // console.log("sqrtPriceX96", sqrtPriceX96);
+        // console.log("Desired liq0", liquidityAmount0);
+        // console.log("Desired liq1", liquidityAmount1);
         // console.log("tokenId", tokenId);
         // console.log("liquidity", liquidity);
-        // console.log("amount0", amount0);
-        // console.log("amount1", amount1);
+        // console.log("amount0", amount0, amount0 < liquidityAmount0);
+        // console.log("amount1", amount1, amount1 < liquidityAmount1);
 
+        // address sharesToken = _baal.sharesToken();
         // Remove allowance and refund in both assets.
         if (amount0 < liquidityAmount0) {
             TransferHelper.safeApprove(token0, address(nonfungiblePositionManager), 0);
             uint256 refund0 = liquidityAmount0 - amount0;
             // console.log("refund0", refund0);
-            TransferHelper.safeTransfer(token0, _msgSender(), refund0);
+            _transferRemainder(token0, _msgSender(), refund0, isSharesToken0);
         }
 
         if (amount1 < liquidityAmount1) {
             TransferHelper.safeApprove(token1, address(nonfungiblePositionManager), 0);
             uint256 refund1 = liquidityAmount1 - amount1;
             // console.log("refund1", refund1);
-            TransferHelper.safeTransfer(token1, _msgSender(), refund1);
+            _transferRemainder(token1, _msgSender(), refund1, !isSharesToken0);
         }
 
         emit UniswapPositionCreated(pool, tokenId, sqrtPriceX96, liquidity, amount0, amount1);

@@ -3,7 +3,20 @@ pragma solidity >=0.8.7 <0.9.0;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
+/**
+ * @title Math utility functions
+ * @author DAOHaus
+ * @notice Includes math functions to calculate prices on Uniswap V3
+ */
 library CustomMath {
+    /// @dev Scale used by Uniswap for working with Q64.96 (binary fixed-point) numbers
+    uint256 constant Q96 = 2 ** 96;
+
+    /**
+     * @notice Calculates the squeare root of provided value
+     * @param x value
+     * @return SQRT(`value`)
+     */
     function sqrt(uint256 x) internal pure returns (uint256) {
         if (x == 0) return 0;
         uint256 z = (x + 1) / 2;
@@ -48,7 +61,7 @@ library CustomMath {
 
         // Adjust the square root price to the Uniswap V3 fixed-point format by scaling up by 2^96,
         // then dividing by 1e9 to correct for the initial scaling by 1e18.
-        uint256 sqrtPriceX96 = (sqrtPrice * 2 ** 96) / 1e9;
+        uint256 sqrtPriceX96 = (sqrtPrice * Q96) / 1e9;
 
         // Return the result as a uint160, conforming to the Uniswap V3 type requirement for sqrtPriceX96.
         return uint160(sqrtPriceX96);

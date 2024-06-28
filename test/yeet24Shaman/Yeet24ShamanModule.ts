@@ -93,6 +93,11 @@ describe("Yeet24ShamanModule", function () {
 
   let users: { [key: string]: User };
 
+  const yeet24Abi = [
+    "event UniswapPositionCreated(address indexed pool, uint256 indexed positionId, uint160 sqrtPriceX96, uint128 liquidity, uint256 amount0, uint256 amount1)",
+  ];
+  const ifaceYeet24 = new ethers.utils.Interface(yeet24Abi);
+
   this.beforeAll(async function () {
     // // NOTICE: reset network
     // await network.provider.request({
@@ -1151,8 +1156,8 @@ describe("Yeet24ShamanModule", function () {
 
     it("Should be able to mint and create position", async () => {
       // mock yeet24 weth and sharesToken balance
-      const sharesToMint = ethers.utils.parseEther("10");
-      const wethBalance = ethers.utils.parseEther("1");
+      const sharesToMint = ethers.utils.parseEther("35");
+      const wethBalance = ethers.utils.parseEther("0.01");
       expect(await sharesToken.balanceOf(yeet24Shaman.address)).to.be.equal(0);
       expect(await weth.balanceOf(yeet24Shaman.address)).to.be.equal(0);
 
@@ -1192,6 +1197,10 @@ describe("Yeet24ShamanModule", function () {
 
       await stopImpersonatingAccount(avatar.address);
       ///// stop impersonating
+
+      // Any remainder should be burned
+      expect(await sharesToken.balanceOf(avatar.address)).to.be.equal(0);
+      expect(await sharesToken.balanceOf(yeet24Shaman.address)).to.be.equal(0);
     });
 
     it("Should be able to execute if yeeter campaign finished and met threshold", async () => {
@@ -1229,6 +1238,7 @@ describe("Yeet24ShamanModule", function () {
       const collectedAmount = totalYeeted.add(boostRewards);
 
       const tx = await yeet24Shaman.execute();
+      const receipt = await tx.wait();
 
       await expect(tx)
         .to.emit(yeet24Shaman, "Executed")
@@ -1237,7 +1247,18 @@ describe("Yeet24ShamanModule", function () {
       await expect(tx)
         .to.emit(sharesToken, "Transfer")
         .withArgs(ethers.constants.AddressZero, yeet24Shaman.address, sharesSupplyBefore);
-      expect(await sharesToken.totalSupply()).to.be.equal(sharesSupplyBefore.mul(2));
+
+      const positionLog = ifaceYeet24.parseLog(
+        receipt.logs.filter(
+          (l) =>
+            l.address === yeet24Shaman.address &&
+            l.topics[0] === "0xa99a6875308aea6e18b918455ff8cd4633862a798bb7a5e9f21fd78b5a1189f2",
+        )[0],
+      );
+      expect(await sharesToken.totalSupply()).to.be.equal(
+        sharesSupplyBefore.add(BigNumber.from(positionLog.args.amount1)),
+      );
+
       // minted shares are used to mint UniV3 position
       expect(await sharesToken.balanceOf(yeet24Shaman.address)).to.be.equal(0);
 
@@ -1541,6 +1562,7 @@ describe("Yeet24ShamanModule", function () {
       expect(await ethers.provider.getBalance(avatar.address)).to.be.greaterThanOrEqual(yeet24ShamanParams.goal);
 
       const tx = await yeet24Shaman.execute();
+      const receipt = await tx.wait();
 
       // ExecutionFailed(yeethBalance, boostRewards, transferSuccess);
       await expect(tx)
@@ -1550,7 +1572,18 @@ describe("Yeet24ShamanModule", function () {
       await expect(tx)
         .to.emit(sharesToken, "Transfer")
         .withArgs(ethers.constants.AddressZero, yeet24Shaman.address, sharesSupplyBefore);
-      expect(await sharesToken.totalSupply()).to.be.equal(sharesSupplyBefore.mul(2));
+
+      const positionLog = ifaceYeet24.parseLog(
+        receipt.logs.filter(
+          (l) =>
+            l.address === yeet24Shaman.address &&
+            l.topics[0] === "0xa99a6875308aea6e18b918455ff8cd4633862a798bb7a5e9f21fd78b5a1189f2",
+        )[0],
+      );
+      expect(await sharesToken.totalSupply()).to.be.equal(
+        sharesSupplyBefore.add(BigNumber.from(positionLog.args.amount1)),
+      );
+
       // minted shares are used to mint UniV3 position
       expect(await sharesToken.balanceOf(yeet24Shaman.address)).to.be.equal(0);
 
