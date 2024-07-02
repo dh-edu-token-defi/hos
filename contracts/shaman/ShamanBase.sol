@@ -24,8 +24,11 @@ error ShamanBase__InvalidName();
  *      (e.g. admin, manager, governor)
  */
 abstract contract ShamanBase is IShaman, ContextUpgradeable, ReentrancyGuardUpgradeable, ERC165Upgradeable {
+    /// @notice shaman name
     string internal NAME;
+    /// @notice baal address
     IBaal internal _baal;
+    /// @notice vault address
     address internal _vault;
 
     /**

@@ -8,6 +8,7 @@ import { FactoryFriendly, Module } from "@gnosis.pm/zodiac/contracts/core/Module
  * @author DAOHaus
  * @notice Implement the base functionality for a contract to become a Zodiac module
  * @dev Inherits from Gnosis Module
+ * Interface ID: 0x8195a8d8
  */
 abstract contract ZodiacModule is Module {
     /**

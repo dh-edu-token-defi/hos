@@ -8,6 +8,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
  * @author DAOHaus
  * @notice Base interface to implement a Shaman contract
  * @dev Supports ERC165 to detect what interfaces a smart contract implements
+ * Interface ID: 0xd2296f8d
  */
 interface IShaman is IERC165 {
     /**
