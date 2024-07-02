@@ -8,6 +8,7 @@ import { IShaman } from "./IShaman.sol";
  * @author DAOHaus
  * @notice Interface to implement a Shaman contract with manager capabilities
  * @dev Inherits base ISHaman interface
+ * Interface ID: 0xf7c8b398
  */
 interface IManagerShaman is IShaman {
     /**

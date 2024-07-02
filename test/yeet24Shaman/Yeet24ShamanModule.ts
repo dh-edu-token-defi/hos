@@ -32,6 +32,7 @@ import {
 import { deployUniV3Infra } from "../utils/uniswapv3";
 import { YEETER_SHAMAN_PERMISSIONS, YeeterParams, assembleYeeterShamanParams } from "../utils/yeeter";
 import {
+  YEET24_SHAMAN_NAME,
   YEET24_SHAMAN_PERMISSIONS,
   Yeet24Params,
   assembleYeet24ShamanParams,
@@ -74,8 +75,6 @@ describe("Yeet24ShamanModule", function () {
     multiplier: "100",
   };
   let yeeterShamanParams: YeeterParams;
-
-  const YEET24SHAMAN_NAME = "Yeet24ShamanModule";
 
   const defaultYeet24ShamanParams = {
     poolFee: BigNumber.from("10000"),
@@ -1003,17 +1002,31 @@ describe("Yeet24ShamanModule", function () {
 
       // ShamanBase
       expect(await yeet24Shaman.baal()).to.be.equal(baal.address);
-      expect(await yeet24Shaman.name()).to.be.equal(YEET24SHAMAN_NAME);
+      expect(await yeet24Shaman.name()).to.be.equal(YEET24_SHAMAN_NAME);
       expect(await yeet24Shaman.vault()).to.be.equal(avatar.address);
+      
+      // Shaman interface
+      expect(await yeet24Shaman.supportsInterface("0xd2296f8d")).to.be.true; // IShaman
+      
+      // Admin interface
       expect(await baal.isAdmin(yeet24Shaman.address)).to.be.true;
-      expect(await baal.isManager(yeet24Shaman.address)).to.be.true;
+      expect(await yeet24Shaman.supportsInterface("0xb3b0786d")).to.be.true;
 
+      // Manager interface
+      expect(await baal.isManager(yeet24Shaman.address)).to.be.true;
+      expect(await yeet24Shaman.supportsInterface("0xf7c8b398")).to.be.true;
+
+      // Governor interface
+      expect(await baal.isGovernor(yeet24Shaman.address)).to.be.false;
+      expect(await yeet24Shaman.supportsInterface("0x09238d57")).to.be.false;
+      
       // ZodiacModule
       expect(await yeet24Shaman.avatar()).to.be.equal(avatar.address);
       expect(await yeet24Shaman.target()).to.be.equal(avatar.address);
       expect(await yeet24Shaman.owner()).to.be.equal(avatar.address);
       expect(await yeet24Shaman.moduleEnabled()).to.be.true;
       expect(await avatar.isModuleEnabled(yeet24Shaman.address)).to.be.true;
+      expect(await yeet24Shaman.supportsInterface("0x8195a8d8")).to.be.true;
 
       // Yeeter config params
       expect(await yeeterShaman.baal()).to.be.equal(baal.address);
@@ -1029,7 +1042,12 @@ describe("Yeet24ShamanModule", function () {
       expect(await yeeterShaman.feeAmounts(0)).to.be.equal(yeeterShamanParams.feeAmounts[0]);
       expect(await yeeterShaman.feeAmounts(1)).to.be.equal(yeeterShamanParams.feeAmounts[1]);
       expect(await yeeterShaman.isShares()).to.be.equal(yeeterShamanParams.isShares);
+      expect(await baal.isAdmin(yeeterShaman.address)).to.be.false;
       expect(await baal.isManager(yeeterShaman.address)).to.be.true;
+      expect(await baal.isGovernor(yeeterShaman.address)).to.be.false;
+      // TODO: EthYeeter does not inherits the base contracts
+      // expect(await yeeterShaman.supportsInterface("0xf7c8b398")).to.be.true;
+
     });
 
     // TODO: yeeter un-happy paths
@@ -1256,7 +1274,9 @@ describe("Yeet24ShamanModule", function () {
         )[0],
       );
       expect(await sharesToken.totalSupply()).to.be.equal(
-        sharesSupplyBefore.add(BigNumber.from(positionLog.args.amount1)),
+        sharesSupplyBefore.add(
+          BigNumber.from(sharesToken.address < weth.address ? positionLog.args.amount0 : positionLog.args.amount1),
+        ),
       );
 
       // minted shares are used to mint UniV3 position
@@ -1581,7 +1601,9 @@ describe("Yeet24ShamanModule", function () {
         )[0],
       );
       expect(await sharesToken.totalSupply()).to.be.equal(
-        sharesSupplyBefore.add(BigNumber.from(positionLog.args.amount1)),
+        sharesSupplyBefore.add(
+          BigNumber.from(sharesToken.address < weth.address ? positionLog.args.amount0 : positionLog.args.amount1),
+        ),
       );
 
       // minted shares are used to mint UniV3 position
