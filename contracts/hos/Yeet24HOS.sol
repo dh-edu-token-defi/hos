@@ -19,12 +19,16 @@ error Yeet24HOS__ParamSizeMismatch();
 contract Yeet24HOS is HOSBase {
     IBaalAndVaultSummoner public baalVaultSummoner;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         address _baalVaultSummoner,
         address _moduleProxyFactory,
         address[] memory _allowlistTemplates,
         string memory _referrerId
-    ) public override {
+    ) public override initializer {
         // baalAndVaultSummoner
         require(_baalVaultSummoner != address(0), "zero address");
         baalVaultSummoner = IBaalAndVaultSummoner(_baalVaultSummoner); //vault summoner
@@ -140,4 +144,7 @@ contract Yeet24HOS is HOSBase {
     ) external view returns (address predicted) {
         return Clones.predictDeterministicAddress(implementation, bytes32(salt), address(this));
     }
+
+    // solhint-disable-next-line state-visibility, var-name-mixedcase
+    uint256[49] __gap_y24;
 }
