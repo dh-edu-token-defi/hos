@@ -23,6 +23,14 @@ abstract contract GovernorShaman is ShamanBase, IGovernorShaman {
     }
 
     /**
+     * @notice A modifier for methods that require to check shaman admin privileges
+     */
+    modifier baalOrGovernorOnly() {
+        if (_msgSender() != _vault && !_baal.isGovernor(_msgSender())) revert GovernorShaman__NoGovernorRole();
+        _;
+    }
+
+    /**
      * @notice Initializer function
      * @dev Should be called during contract initializaton
      * @param _name shaman name
@@ -63,7 +71,7 @@ abstract contract GovernorShaman is ShamanBase, IGovernorShaman {
      * @notice Cancel an active proposal in baal
      * @inheritdoc IGovernorShaman
      */
-    function cancelProposal(uint32 _proposalId) public virtual nonReentrant {
+    function cancelProposal(uint32 _proposalId) public virtual nonReentrant baalOrGovernorOnly {
         _baal.cancelProposal(_proposalId);
     }
 
@@ -73,7 +81,7 @@ abstract contract GovernorShaman is ShamanBase, IGovernorShaman {
      * - tribute, quorum, sponsor threshold & retention bound
      * @inheritdoc IGovernorShaman
      */
-    function setGovernanceConfig(bytes memory _governanceConfig) public virtual {
+    function setGovernanceConfig(bytes memory _governanceConfig) public virtual baalOrGovernorOnly {
         _baal.setGovernanceConfig(_governanceConfig);
     }
 
@@ -81,7 +89,7 @@ abstract contract GovernorShaman is ShamanBase, IGovernorShaman {
      * @notice Set baal trusted forwarded for meta txs
      * @inheritdoc IGovernorShaman
      */
-    function setTrustedForwarder(address _trustedForwarderAddress) public virtual {
+    function setTrustedForwarder(address _trustedForwarderAddress) public virtual baalOrGovernorOnly {
         _baal.setTrustedForwarder(_trustedForwarderAddress);
     }
 }

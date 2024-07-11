@@ -219,5 +219,36 @@ describe("ExampleShaman", function () {
     it("Should be initialized with tx block number", async () => {
       expect(await exampleShaman.blockNo()).to.be.equal(summonBlockNo);
     });
+
+    it("Should not be able to call role-based functions", async () => {
+      await expect(exampleShaman.setAdminConfig(true, true)).to.be.revertedWithCustomError(
+        exampleShaman,
+        "AdminShaman__NoAdminRole",
+      );
+      await expect(exampleShaman.cancelProposal(1)).to.be.revertedWithCustomError(
+        exampleShaman,
+        "GovernorShaman__NoGovernorRole",
+      );
+      await expect(exampleShaman.setGovernanceConfig("0x")).to.be.revertedWithCustomError(
+        exampleShaman,
+        "GovernorShaman__NoGovernorRole",
+      );
+      await expect(exampleShaman.setTrustedForwarder(ethers.constants.AddressZero)).to.be.revertedWithCustomError(
+        exampleShaman,
+        "GovernorShaman__NoGovernorRole",
+      );
+      await expect(
+        exampleShaman.mintLoot([exampleShaman.address], [ethers.utils.parseEther("1")]),
+      ).to.be.revertedWithCustomError(exampleShaman, "ManagerShaman__NoManagerRole");
+      await expect(
+        exampleShaman.mintShares([exampleShaman.address], [ethers.utils.parseEther("1")]),
+      ).to.be.revertedWithCustomError(exampleShaman, "ManagerShaman__NoManagerRole");
+      await expect(
+        exampleShaman.burnLoot([exampleShaman.address], [ethers.utils.parseEther("1")]),
+      ).to.be.revertedWithCustomError(exampleShaman, "ManagerShaman__NoManagerRole");
+      await expect(
+        exampleShaman.burnShares([exampleShaman.address], [ethers.utils.parseEther("1")]),
+      ).to.be.revertedWithCustomError(exampleShaman, "ManagerShaman__NoManagerRole");
+    });
   });
 });

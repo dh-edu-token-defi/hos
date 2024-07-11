@@ -1004,10 +1004,10 @@ describe("Yeet24ShamanModule", function () {
       expect(await yeet24Shaman.baal()).to.be.equal(baal.address);
       expect(await yeet24Shaman.name()).to.be.equal(YEET24_SHAMAN_NAME);
       expect(await yeet24Shaman.vault()).to.be.equal(avatar.address);
-      
+
       // Shaman interface
       expect(await yeet24Shaman.supportsInterface("0xd2296f8d")).to.be.true; // IShaman
-      
+
       // Admin interface
       expect(await baal.isAdmin(yeet24Shaman.address)).to.be.true;
       expect(await yeet24Shaman.supportsInterface("0xb3b0786d")).to.be.true;
@@ -1019,7 +1019,7 @@ describe("Yeet24ShamanModule", function () {
       // Governor interface
       expect(await baal.isGovernor(yeet24Shaman.address)).to.be.false;
       expect(await yeet24Shaman.supportsInterface("0x09238d57")).to.be.false;
-      
+
       // ZodiacModule
       expect(await yeet24Shaman.avatar()).to.be.equal(avatar.address);
       expect(await yeet24Shaman.target()).to.be.equal(avatar.address);
@@ -1047,7 +1047,25 @@ describe("Yeet24ShamanModule", function () {
       expect(await baal.isGovernor(yeeterShaman.address)).to.be.false;
       // TODO: EthYeeter does not inherits the base contracts
       // expect(await yeeterShaman.supportsInterface("0xf7c8b398")).to.be.true;
+    });
 
+    it("Should not be able to call role-based functions", async () => {
+      await expect(yeet24Shaman.setAdminConfig(true, true)).to.be.revertedWithCustomError(
+        yeet24Shaman,
+        "AdminShaman__NoAdminRole",
+      );
+      await expect(
+        yeet24Shaman.mintLoot([yeet24Shaman.address], [ethers.utils.parseEther("1")]),
+      ).to.be.revertedWithCustomError(yeet24Shaman, "ManagerShaman__NoManagerRole");
+      await expect(
+        yeet24Shaman.mintShares([yeet24Shaman.address], [ethers.utils.parseEther("1")]),
+      ).to.be.revertedWithCustomError(yeet24Shaman, "ManagerShaman__NoManagerRole");
+      await expect(
+        yeet24Shaman.burnLoot([yeet24Shaman.address], [ethers.utils.parseEther("1")]),
+      ).to.be.revertedWithCustomError(yeet24Shaman, "ManagerShaman__NoManagerRole");
+      await expect(
+        yeet24Shaman.burnShares([yeet24Shaman.address], [ethers.utils.parseEther("1")]),
+      ).to.be.revertedWithCustomError(yeet24Shaman, "ManagerShaman__NoManagerRole");
     });
 
     // TODO: yeeter un-happy paths

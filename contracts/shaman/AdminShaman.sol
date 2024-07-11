@@ -23,6 +23,14 @@ abstract contract AdminShaman is ShamanBase, IAdminShaman {
     }
 
     /**
+     * @notice A modifier for methods that require to check shaman admin privileges
+     */
+    modifier baalOrAdminOnly() {
+        if (_msgSender() != _vault && !_baal.isAdmin(_msgSender())) revert AdminShaman__NoAdminRole();
+        _;
+    }
+
+    /**
      * @notice Initializer function
      * @dev Should be called during contract initializaton
      * @param _name shaman name
@@ -63,7 +71,7 @@ abstract contract AdminShaman is ShamanBase, IAdminShaman {
      * @notice Set baal admin config parameters
      * @inheritdoc IAdminShaman
      */
-    function setAdminConfig(bool pauseShares, bool pauseLoot) public virtual {
+    function setAdminConfig(bool pauseShares, bool pauseLoot) public virtual baalOrAdminOnly {
         _baal.setAdminConfig(pauseShares, pauseLoot);
     }
 }

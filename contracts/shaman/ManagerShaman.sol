@@ -23,6 +23,14 @@ abstract contract ManagerShaman is ShamanBase, IManagerShaman {
     }
 
     /**
+     * @notice A modifier for methods that require to check shaman admin privileges
+     */
+    modifier baalOrManagerOnly() {
+        if (_msgSender() != _vault && !_baal.isManager(_msgSender())) revert ManagerShaman__NoManagerRole();
+        _;
+    }
+
+    /**
      * @notice Initializer function
      * @dev Should be called during contract initializaton
      * @param _name shaman name
@@ -63,7 +71,7 @@ abstract contract ManagerShaman is ShamanBase, IManagerShaman {
      * @notice Mint an amount of baal shares to specified addresses
      * @inheritdoc IManagerShaman
      */
-    function mintShares(address[] calldata to, uint256[] calldata amount) public virtual {
+    function mintShares(address[] calldata to, uint256[] calldata amount) public virtual baalOrManagerOnly {
         _baal.mintShares(to, amount);
     }
 
@@ -71,7 +79,7 @@ abstract contract ManagerShaman is ShamanBase, IManagerShaman {
      * @notice Burn an amount of baal shares to specified addresses
      * @inheritdoc IManagerShaman
      */
-    function burnShares(address[] calldata from, uint256[] calldata amount) public virtual {
+    function burnShares(address[] calldata from, uint256[] calldata amount) public virtual baalOrManagerOnly {
         _baal.burnShares(from, amount);
     }
 
@@ -79,7 +87,7 @@ abstract contract ManagerShaman is ShamanBase, IManagerShaman {
      * @notice Mint an amount of baal loot to specified addresses
      * @inheritdoc IManagerShaman
      */
-    function mintLoot(address[] calldata to, uint256[] calldata amount) public virtual {
+    function mintLoot(address[] calldata to, uint256[] calldata amount) public virtual baalOrManagerOnly {
         _baal.mintLoot(to, amount);
     }
 
@@ -87,7 +95,7 @@ abstract contract ManagerShaman is ShamanBase, IManagerShaman {
      * @notice Burn an amount of baal loot to specified addresses
      * @inheritdoc IManagerShaman
      */
-    function burnLoot(address[] calldata from, uint256[] calldata amount) public virtual {
+    function burnLoot(address[] calldata from, uint256[] calldata amount) public virtual baalOrManagerOnly {
         _baal.burnLoot(from, amount);
     }
 }
