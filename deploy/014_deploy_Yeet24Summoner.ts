@@ -46,11 +46,14 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     bvSummonerAddress,
     deployer,
   )) as BaalAndVaultSummoner;
+
+  console.log("BVSummoner", bvSummoner.address);
   const baalSummoner = (await ethers.getContractAt(
     "BaalSummoner",
     await bvSummoner._baalSummoner(),
     deployer,
   )) as BaalSummoner;
+  console.log("baalSummoner", baalSummoner.address);
 
   // NOTICE: Need to fetch moduleProxyFactory from summoner as setupAddresses currently differ in a few networks (e.g. optimisms)
   const currentModuleProxyFactoryAddress = ethers.utils.getAddress(
@@ -76,6 +79,13 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     ? (await deployments.get("GovernorLoot")).address
     : addresses.lootToken;
 
+  console.log("Deploying Yeet24HOS with args:", [
+    bvSummonerAddress,
+    moduleProxyFactoryAddress,
+    [yeeter, sharesToken, lootToken],
+    "DHYeet24ShamanSummoner.5",
+  ]);
+
   const hosSummonerDeployed = await deployments.deploy("Yeet24HOS", {
     contract: "Yeet24HOS",
     from: deployer,
@@ -84,12 +94,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       proxyContract: "UUPS",
       execute: {
         methodName: "initialize",
-        args: [
-          bvSummonerAddress,
-          moduleProxyFactoryAddress,
-          [yeet24ShamanModule, yeeter, sharesToken, lootToken],
-          "DHYeet24ShamanSummoner.5",
-        ],
+        args: [bvSummonerAddress, moduleProxyFactoryAddress, [sharesToken], "DHYeet24ShamanSummoner.5"],
       },
     },
     log: true,

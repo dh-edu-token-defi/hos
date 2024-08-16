@@ -23,7 +23,7 @@ export const deploymentConfig: { [key: string]: Contracts & Ownable } = {
     sharesToken: "0x8124Cbb807A7b64123F3dEc3EF64995d8B10d3Eb",
     univ3NftPositionManager: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
     weth: "",
-    owner: "",
+    owner: "0xCED608Aa29bB92185D9b6340Adcbfa263DAe075b",
   },
   "100": {
     // gnosis
