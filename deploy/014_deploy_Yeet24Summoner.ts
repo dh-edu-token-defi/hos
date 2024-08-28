@@ -82,7 +82,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   console.log("Deploying Yeet24HOS with args:", [
     bvSummonerAddress,
     moduleProxyFactoryAddress,
-    [yeeter, sharesToken, lootToken],
+    [sharesToken],
     "DHYeet24ShamanSummoner.5",
   ]);
 

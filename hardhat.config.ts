@@ -234,8 +234,8 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       buildbear: "verifyContract",
-      mainnet: "XBZRTK1ZDSWBMSU19N6VGHAP65CPENM6ZY",
-      sepolia: explorerApiKey("sepolia"),
+      mainnet: "",
+      sepolia: "",
       optimisticEthereum: explorerApiKey("optimism-mainnet"),
       // optimisticSepolia: explorerApiKey("optimism-sepolia"),
       arbitrumOne: explorerApiKey("arbitrum-mainnet"),

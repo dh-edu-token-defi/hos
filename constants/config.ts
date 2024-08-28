@@ -21,6 +21,7 @@ export const deploymentConfig: { [key: string]: Contracts & Ownable } = {
     bvSummoner: "0x594E630efbe8dbd810c168e3878817a4094bB312",
     btSummoner: "0x8a4A9E36106Ee290811B89e06e2faFE913507965",
     sharesToken: "0x8124Cbb807A7b64123F3dEc3EF64995d8B10d3Eb",
+    lootToken: "0x0444AE984b9563C8480244693ED65F25B3C64a4E",
     univ3NftPositionManager: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
     weth: "",
     owner: "0xCED608Aa29bB92185D9b6340Adcbfa263DAe075b",
