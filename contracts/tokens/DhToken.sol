@@ -30,7 +30,7 @@ contract DhToken is
 
         __ERC20_init(name_, symbol_);
         __ERC20Pausable_init();
-        __Ownable_init(msg.sender);
+        __Ownable_init(_msgSender());
         __ERC20Permit_init(name_);
         __ERC20Votes_init();
         __UUPSUpgradeable_init();
@@ -87,7 +87,7 @@ contract DhToken is
         // allow baal to mint and burn even when paused
         require(
             from == address(0) /*Minting allowed*/ ||
-                (msg.sender == owner() && to == address(0)) /*Burning by Baal allowed*/ ||
+                (_msgSender() == owner() && to == address(0)) /*Burning by Baal allowed*/ ||
                 !paused(),
             "DhToken: !transferable"
         );
