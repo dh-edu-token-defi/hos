@@ -23,7 +23,7 @@ abstract contract ZodiacModule is Module {
      * @dev Parameters should be ABI encoded in `_initializeParams`
      */
     function setUp(bytes memory _initializeParams) public virtual override(FactoryFriendly) onlyInitializing {
-        __Ownable_init();
+        __Ownable_init(_msgSender());
         (avatar, target) = abi.decode(_initializeParams, (address, address));
     }
 }

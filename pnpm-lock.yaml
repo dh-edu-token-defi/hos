@@ -21,8 +21,8 @@ dependencies:
     specifier: ^5.0.2
     version: 5.0.2
   '@openzeppelin/contracts-upgradeable':
-    specifier: ^4.9.6
-    version: 4.9.6
+    specifier: ^5.0.2
+    version: 5.0.2(@openzeppelin/contracts@5.0.2)
   '@uniswap/v3-core':
     specifier: ^1.0.1
     version: 1.0.1
@@ -1238,6 +1238,14 @@ packages:
 
   /@openzeppelin/contracts-upgradeable@4.9.6:
     resolution: {integrity: sha512-m4iHazOsOCv1DgM7eD7GupTJ+NFVujRZt1wzddDPSVGpWdKq1SKkla5htKG7+IS4d2XOCtzkUNwRZ7Vq5aEUMA==}
+    dev: false
+
+  /@openzeppelin/contracts-upgradeable@5.0.2(@openzeppelin/contracts@5.0.2):
+    resolution: {integrity: sha512-0MmkHSHiW2NRFiT9/r5Lu4eJq5UJ4/tzlOgYXNAIj/ONkQTVnz22pLxDvp4C4uZ9he7ZFvGn3Driptn1/iU7tQ==}
+    peerDependencies:
+      '@openzeppelin/contracts': 5.0.2
+    dependencies:
+      '@openzeppelin/contracts': 5.0.2
     dev: false
 
   /@openzeppelin/contracts@3.4.2-solc-0.7:

@@ -42,7 +42,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address[] memory _allowlistTemplates,
         string memory _referrerId
     ) public virtual initializer {
-        __Ownable_init();
+        __Ownable_init(_msgSender());
         __UUPSUpgradeable_init();
         baalSummoner = IBaalSummoner(_baalSummoner);
         moduleProxyFactory = _moduleProxyFactory;
