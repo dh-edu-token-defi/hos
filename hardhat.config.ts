@@ -222,6 +222,20 @@ const config: HardhatUserConfig = {
           },
         },
       },
+      {
+        version: "0.8.20",
+        settings: {
+          metadata: {
+            // Not including the metadata hash
+            // https://github.com/paulrberg/hardhat-template/issues/31
+            bytecodeHash: "none",
+          },
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
     ],
   },
   mocha: {

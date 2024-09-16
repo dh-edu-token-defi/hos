@@ -14,6 +14,9 @@ import { ZodiacModuleShaman } from "../shaman/ZodiacModuleShaman.sol";
 import { INonfungiblePositionManager } from "../libs/INonfungiblePositionManager.sol";
 import { IWETH9 } from "../libs/IWETH9.sol";
 import { CustomMath } from "../libraries/CustomMath.sol";
+import { HosDeployable } from "../shaman/HosDeployable.sol";
+
+import { IYeet24ClaimModule } from "../modules/IYeet24ClaimModule.sol";
 
 // import "hardhat/console.sol";
 
@@ -39,7 +42,8 @@ error Yeet24ShamanModule__ExecutionFailed(bytes returnData);
  * @dev In order to operate the contract should have Baal Admin and Manager privileges as well as being added as
  * a Safe module to the Baal/Yeeter vault.
  */
-contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, ManagerShaman {
+
+contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, ManagerShaman, HosDeployable {
     /// @dev UniswapV3 NonfungiblePositionManager contract
     INonfungiblePositionManager public nonfungiblePositionManager;
     /// @dev WETH address
@@ -165,6 +169,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         uint24 _poolFee
     ) internal onlyInitializing {
         __ZodiacModuleShaman__init("Yeet24ShamanModule", _baal, _vault);
+        __HosDeployable_init(keccak256(abi.encode(name())));
         __AdminShaman_init_unchained();
         __ManagerShaman_init_unchained();
         __Yeet24ShamanModule__init_unchained(
@@ -399,6 +404,8 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
                 if (!transferSuccess) revert Yeet24ShamanModule__TransferFailed(data);
                 yeethBalance += boostRewards; // NOTICE: update balance to be used for minting pool position
             }
+
+            IYeet24ClaimModule(boostRewardsPool).claimReward();
 
             // ZodiacModuleShaman action: execute multiSend to
             //  - wrap ETH collected in vault

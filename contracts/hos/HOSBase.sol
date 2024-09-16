@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -24,6 +24,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     address public moduleProxyFactory;
     mapping(address => bool) public allowlistTemplates;
     bytes32 public referrerId;
+    mapping(address shamanAddress => bytes32 shamanId) public deployedShamans;
 
     event SetSummoner(address summoner);
 
@@ -59,6 +60,11 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // todo: add a tag tohelp indexing
         // emit event somewhere
         return allowlistTemplates[template];
+    }
+
+    function registerShaman(address shamanAddress, bytes32 shamanId) public {
+        require(deployedShamans[_msgSender()] != bytes32(0), "HOS: !deployedShaman");
+        deployedShamans[shamanAddress] = shamanId;
     }
 
     // add setters for allowlistTemplates
@@ -248,6 +254,10 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
                 )
             );
             shamanAddresses[i] = Clones.cloneDeterministic(shamanTemplates[i], salt);
+
+            // add shaman to deployed mapping
+            deployedShamans[shamanAddresses[i]] = "0x01";
+
             unchecked {
                 ++i;
             }
