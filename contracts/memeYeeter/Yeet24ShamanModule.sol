@@ -455,8 +455,8 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
      * @dev examples include receiving yeeter fees or extra deposits from a rewards pool
      */
     receive() external payable {
-        if (boostRewardsPool == msg.sender) {
-            emit BoostRewardsDeposited(msg.sender, msg.value);
+        if (boostRewardsPool == _msgSender()) {
+            emit BoostRewardsDeposited(_msgSender(), msg.value);
         }
     }
 }
