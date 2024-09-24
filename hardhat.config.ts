@@ -249,7 +249,7 @@ const config: HardhatUserConfig = {
     apiKey: {
       buildbear: "verifyContract",
       mainnet: explorerApiKey("mainnet"),
-      sepolia: explorerApiKey("sepolia"),
+      sepolia: "XBZRTK1ZDSWBMSU19N6VGHAP65CPENM6ZY", // explorerApiKey("sepolia"),
       optimisticEthereum: explorerApiKey("optimism-mainnet"),
       // optimisticSepolia: explorerApiKey("optimism-sepolia"),
       arbitrumOne: explorerApiKey("arbitrum-mainnet"),

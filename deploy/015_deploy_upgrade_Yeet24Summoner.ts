@@ -24,5 +24,5 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 export default deployFn;
-deployFn.id = "014_deploy_upgrade_Yeet24HOS"; // id required to prevent reexecution
-deployFn.tags = ["Factories", "Yeet24HOS", "Upgrade"];
+deployFn.id = "015_deploy_upgrade_Yeet24HOS"; // id required to prevent reexecution
+deployFn.tags = ["Factories", "Yeet24HOSUpgrade", "Upgrade"];

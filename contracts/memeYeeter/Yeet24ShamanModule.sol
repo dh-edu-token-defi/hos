@@ -397,6 +397,9 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             // AdminShaman action: Make shares/loot transferrable
             _baal.setAdminConfig(false, false);
 
+            // claim rewards from the boostRewardsPool if available
+            boostRewards += IYeet24ClaimModule(boostRewardsPool).claimReward(payable(vault()));
+
             // Shaman action: if any boostRewards (e.g. fees + extra boostRewardsPool deposits) are available,
             // forward balance to the vault in charge of minting the pool initial liquidity position
             if (boostRewards > 0) {
@@ -404,8 +407,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
                 if (!transferSuccess) revert Yeet24ShamanModule__TransferFailed(data);
                 yeethBalance += boostRewards; // NOTICE: update balance to be used for minting pool position
             }
-
-            IYeet24ClaimModule(boostRewardsPool).claimReward();
 
             // ZodiacModuleShaman action: execute multiSend to
             //  - wrap ETH collected in vault

@@ -33,12 +33,13 @@ contract Yeet24ClaimModule is
 
     function __Yeet24ClaimModule_init(bytes memory initializationParams) public initializer {
         __Pausable_init();
-        __Ownable_init(_msgSender());
         __UUPSUpgradeable_init();
-        (hos, shamanTemplateId, maxReward, rewardPercent) = abi.decode(
+        address initialOwner;
+        (initialOwner, hos, shamanTemplateId, maxReward, rewardPercent) = abi.decode(
             initializationParams,
-            (address, bytes32, uint256, uint256)
+            (address, address, bytes32, uint256, uint256)
         );
+        __Ownable_init(initialOwner);
     }
 
     // is ok to claim
@@ -63,14 +64,14 @@ contract Yeet24ClaimModule is
         rewardPercent = _rewardPercent;
     }
 
-    function claimReward() public isWhiteListedShaman {
+    function claimReward(address payable vault) public isWhiteListedShaman returns (uint256 reward) {
         if (maxReward == 0 || address(this).balance == 0) {
-            return;
+            return 0;
         }
         // transfer reward to sender
-        address payable shaman = payable(_msgSender());
-        uint256 shamanBalance = shaman.balance;
-        uint256 reward = (shamanBalance * rewardPercent) / 100;
+
+        uint256 vaultBalance = vault.balance;
+        reward = (vaultBalance * rewardPercent) / 100;
         if (reward > maxReward) {
             reward = maxReward;
         }
@@ -78,9 +79,9 @@ contract Yeet24ClaimModule is
             reward = address(this).balance;
         }
 
-        (bool transferSuccess, ) = shaman.call{ value: reward }("");
+        (bool transferSuccess, ) = vault.call{ value: reward }("");
         require(transferSuccess, "Yeet24ClaimModule: transfer failed");
-        emit RewardClaimed(shaman, reward);
+        emit RewardClaimed(vault, reward);
     }
 
     /**
