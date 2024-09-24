@@ -387,10 +387,10 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             amounts[0] = IERC20(token).totalSupply();
 
             // ManagerShaman action: mint 100% shares to this contract. this doubles the total shares
-            _baal.mintShares(receivers, amounts);
+            mintShares(receivers, amounts);
 
             // AdminShaman action: Make shares/loot transferrable
-            _baal.setAdminConfig(false, false);
+            setAdminConfig(false, false);
 
             // Shaman action: if any boostRewards (e.g. fees + extra boostRewardsPool deposits) are available,
             // forward balance to the vault in charge of minting the pool initial liquidity position
