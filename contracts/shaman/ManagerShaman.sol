@@ -71,7 +71,7 @@ abstract contract ManagerShaman is ShamanBase, IManagerShaman {
      * @notice Mint an amount of baal shares to specified addresses
      * @inheritdoc IManagerShaman
      */
-    function mintShares(address[] calldata to, uint256[] calldata amount) public virtual baalOrManagerOnly {
+    function mintShares(address[] memory to, uint256[] memory amount) public virtual baalOrManagerOnly {
         _baal.mintShares(to, amount);
     }
 
