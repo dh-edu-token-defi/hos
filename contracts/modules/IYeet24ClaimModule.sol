@@ -3,5 +3,5 @@
 pragma solidity ^0.8.20;
 
 interface IYeet24ClaimModule {
-    function claimReward(address payable vault) external returns (uint256);
+    function claimReward(address vault, address payable shaman) external returns (uint256);
 }

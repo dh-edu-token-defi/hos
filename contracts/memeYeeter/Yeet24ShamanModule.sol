@@ -398,7 +398,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             _baal.setAdminConfig(false, false);
 
             // claim rewards from the boostRewardsPool if available
-            boostRewards += IYeet24ClaimModule(boostRewardsPool).claimReward(payable(vault()));
+            boostRewards += IYeet24ClaimModule(boostRewardsPool).claimReward(vault(), payable(address(this)));
 
             // Shaman action: if any boostRewards (e.g. fees + extra boostRewardsPool deposits) are available,
             // forward balance to the vault in charge of minting the pool initial liquidity position

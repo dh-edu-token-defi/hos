@@ -24,7 +24,7 @@ contract Yeet24ClaimModule is
     bytes32 public shamanTemplateId; // matches id
     address public hos; // base deployer
 
-    event RewardClaimed(address indexed shaman, uint256 reward);
+    event RewardClaimed(address vault, address shaman, uint256 reward);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -64,7 +64,7 @@ contract Yeet24ClaimModule is
         rewardPercent = _rewardPercent;
     }
 
-    function claimReward(address payable vault) public isWhiteListedShaman returns (uint256 reward) {
+    function claimReward(address vault, address payable shaman) public isWhiteListedShaman returns (uint256 reward) {
         if (maxReward == 0 || address(this).balance == 0) {
             return 0;
         }
@@ -79,9 +79,9 @@ contract Yeet24ClaimModule is
             reward = address(this).balance;
         }
 
-        (bool transferSuccess, ) = vault.call{ value: reward }("");
+        (bool transferSuccess, ) = shaman.call{ value: reward }("");
         require(transferSuccess, "Yeet24ClaimModule: transfer failed");
-        emit RewardClaimed(vault, reward);
+        emit RewardClaimed(vault, shaman, reward);
     }
 
     /**
