@@ -396,12 +396,17 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             // AdminShaman action: Make shares/loot transferrable
             _baal.setAdminConfig(false, false);
 
-            // claim additional rewards from the boostRewardsPool if available
+            // Yeet24ClaimModule action: claim additional rewards from the boostRewardsPool if available
             // NOTICE: it uses ERC165 to check whether contract supports claim module interface
-            (, bytes memory ifaceData) = boostRewardsPool.call(
+            (, bytes memory ifaceReturnData) = boostRewardsPool.call(
                 abi.encodeWithSelector(IERC165.supportsInterface.selector, type(IYeet24ClaimModule).interfaceId)
             );
-            if (uint256(bytes32(ifaceData)) == 1) { // supportsInterface returns true
+            bytes32 boolResult = bytes32(ifaceReturnData); // truncate return data. Should only return a boolean
+            bool isClaimModule;
+            assembly {
+                isClaimModule := boolResult
+            }
+            if (isClaimModule) {
                 boostRewards += IYeet24ClaimModule(boostRewardsPool).claimReward(vault(), payable(address(this)));
             }
             // Shaman action: if any boostRewards (e.g. fees + extra boostRewardsPool deposits) are available,
