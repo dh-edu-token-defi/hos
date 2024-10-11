@@ -101,6 +101,11 @@ contract Yeet24ClaimModule is
         emit RewardClaimed(vault, shaman, reward);
     }
 
+    function withdrawFunds() external onlyOwner {
+        (bool success, ) = payable(_msgSender()).call{value: address(this).balance}("");
+        require(success, "failed");
+    }
+
     /**
      * @notice Accept ETH deposits
      * @dev fallback function to accept ETH deposits
