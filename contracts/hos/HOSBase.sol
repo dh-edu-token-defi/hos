@@ -60,13 +60,10 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return allowlistTemplates[template];
     }
 
+    /// @dev called by shamans during contract initialization
     function registerShaman(bytes32 shamanId) public {
-        // TODO: potential vulnerability: HOS pre-register shaman (with 0x01 code), then later a malicious shaman code 
-        // could call this function to register more shamans
-        // require(deployedShamans[_msgSender()] != bytes32(0), "HOS: !deployedShaman");
-        // deployedShamans[shamanAddress] = shamanId;
-        // NOTICE: solution. Check shaman has the pre-registered code
-        require(deployedShamans[_msgSender()] == bytes32("0x01"), "HOS: !deployedShaman"); // NOTICE: can only be called during pre-registration
+        // NOTICE: check whether shaman (msg.sender) has the pre-registered code
+        require(deployedShamans[_msgSender()] == bytes32("0x01"), "HOS: !deployedShaman");
         deployedShamans[_msgSender()] = shamanId;
     }
 
@@ -259,7 +256,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             shamanAddresses[i] = Clones.cloneDeterministic(shamanTemplates[i], salt);
 
             // pre-register (0x01) shaman to deployed mapping
-            deployedShamans[shamanAddresses[i]] = "0x01";
+            deployedShamans[shamanAddresses[i]] = bytes32("0x01");
 
             unchecked {
                 ++i;
