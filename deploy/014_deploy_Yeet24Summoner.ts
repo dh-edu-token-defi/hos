@@ -73,7 +73,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     network.name === "hardhat" && !forkedNetwork ? (await deployments.get("Shares")).address : addresses.sharesToken;
 
   const lootToken = testNetworks.includes(network.name)
-    ? (await deployments.get("GovernorLoot")).address
+    ? (await deployments.get("DhToken")).address
     : addresses.lootToken;
 
   const hosSummonerDeployed = await deployments.deploy("Yeet24HOS", {
