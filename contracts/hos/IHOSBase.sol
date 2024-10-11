@@ -6,7 +6,7 @@ pragma solidity >=0.8.7 <0.9.0;
  * @author DAOHaus
  */
 interface IHOSBase {
-    function registerShaman(address shamanAddress, bytes32 shamanId) external;
+    function registerShaman(bytes32 shamanId) external;
 
     function deployedShamans(address shamanAddress) external view returns (bytes32);
 }

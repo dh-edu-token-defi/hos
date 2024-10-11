@@ -60,9 +60,14 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return allowlistTemplates[template];
     }
 
-    function registerShaman(address shamanAddress, bytes32 shamanId) public {
-        require(deployedShamans[_msgSender()] != bytes32(0), "HOS: !deployedShaman");
-        deployedShamans[shamanAddress] = shamanId;
+    function registerShaman(bytes32 shamanId) public {
+        // TODO: potential vulnerability: HOS pre-register shaman (with 0x01 code), then later a malicious shaman code 
+        // could call this function to register more shamans
+        // require(deployedShamans[_msgSender()] != bytes32(0), "HOS: !deployedShaman");
+        // deployedShamans[shamanAddress] = shamanId;
+        // NOTICE: solution. Check shaman has the pre-registered code
+        require(deployedShamans[_msgSender()] == bytes32("0x01"), "HOS: !deployedShaman"); // NOTICE: can only be called during pre-registration
+        deployedShamans[_msgSender()] = shamanId;
     }
 
     // add setters for allowlistTemplates
@@ -253,7 +258,7 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             );
             shamanAddresses[i] = Clones.cloneDeterministic(shamanTemplates[i], salt);
 
-            // add shaman to deployed mapping
+            // pre-register (0x01) shaman to deployed mapping
             deployedShamans[shamanAddresses[i]] = "0x01";
 
             unchecked {
@@ -280,5 +285,5 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     // solhint-disable-next-line state-visibility, var-name-mixedcase
-    uint256[46] __gap;
+    uint256[45] __gap;
 }
