@@ -16,15 +16,15 @@ contract ExampleShaman is IExampleShaman, ZodiacModuleShaman, AdminShaman, Gover
 
     event Setup(address _baal, address _vault, bytes _initializeParams);
 
-    function __ExampleShaman__init(address _baal, address _vault) internal onlyInitializing {
-        __ZodiacModuleShaman__init("ExampleShaman", _baal, _vault);
+    function __ExampleShaman_init(address _baal, address _vault) internal onlyInitializing {
+        __ZodiacModuleShaman_init("ExampleShaman", _baal, _vault);
         __AdminShaman_init_unchained();
         __GovernorShaman_init_unchained();
         __ManagerShaman_init_unchained();
-        __ExampleShaman__init_unchained();
+        __ExampleShaman_init_unchained();
     }
 
-    function __ExampleShaman__init_unchained() internal onlyInitializing {
+    function __ExampleShaman_init_unchained() internal onlyInitializing {
         blockNo = block.number;
     }
 
@@ -33,7 +33,7 @@ contract ExampleShaman is IExampleShaman, ZodiacModuleShaman, AdminShaman, Gover
      * @inheritdoc IShaman
      */
     function setup(address _baal, address _vault, bytes memory _initializeParams) public override(IShaman) initializer {
-        __ExampleShaman__init(_baal, _vault);
+        __ExampleShaman_init(_baal, _vault);
         emit Setup(_baal, _vault, _initializeParams);
     }
 

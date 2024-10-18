@@ -9,8 +9,6 @@ import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/
 
 import { IShaman } from "./interfaces/IShaman.sol";
 
-import { IHOSBase } from "../hos/IHOSBase.sol";
-
 /// @notice Provided address is invalid
 error ShamanBase__InvalidAddress();
 /// @notice Provided name is invalid

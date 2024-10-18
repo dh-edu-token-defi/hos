@@ -60,9 +60,11 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return allowlistTemplates[template];
     }
 
-    function registerShaman(address shamanAddress, bytes32 shamanId) public {
-        require(deployedShamans[_msgSender()] != bytes32(0), "HOS: !deployedShaman");
-        deployedShamans[shamanAddress] = shamanId;
+    /// @dev called by shamans during contract initialization
+    function registerShaman(bytes32 shamanId) public {
+        // NOTICE: check whether shaman (msg.sender) has the pre-registered code
+        require(deployedShamans[_msgSender()] == bytes32("0x01"), "HOS: !deployedShaman");
+        deployedShamans[_msgSender()] = shamanId;
     }
 
     // add setters for allowlistTemplates
@@ -253,8 +255,8 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             );
             shamanAddresses[i] = Clones.cloneDeterministic(shamanTemplates[i], salt);
 
-            // add shaman to deployed mapping
-            deployedShamans[shamanAddresses[i]] = "0x01";
+            // pre-register (0x01) shaman to deployed mapping
+            deployedShamans[shamanAddresses[i]] = bytes32("0x01");
 
             unchecked {
                 ++i;
@@ -280,5 +282,5 @@ contract HOSBase is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     // solhint-disable-next-line state-visibility, var-name-mixedcase
-    uint256[46] __gap;
+    uint256[45] __gap;
 }

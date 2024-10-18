@@ -7,16 +7,15 @@ import { IUniswapV3Factory } from "@uniswap/v3-core/contracts/interfaces/IUniswa
 import { IERC20, TransferHelper } from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
 import { IYeet24Shaman } from "./IYeet24Shaman.sol";
-import { AdminShaman } from "../shaman/AdminShaman.sol";
-import { ManagerShaman } from "../shaman/ManagerShaman.sol";
-import { IShaman } from "../shaman/interfaces/IShaman.sol";
-import { ZodiacModuleShaman } from "../shaman/ZodiacModuleShaman.sol";
 import { INonfungiblePositionManager } from "../libs/INonfungiblePositionManager.sol";
 import { IWETH9 } from "../libs/IWETH9.sol";
 import { CustomMath } from "../libraries/CustomMath.sol";
-import { HosDeployable } from "../shaman/HosDeployable.sol";
-
 import { IYeet24ClaimModule } from "../modules/IYeet24ClaimModule.sol";
+import { AdminShaman, IERC165 } from "../shaman/AdminShaman.sol";
+import { HOSDeployable } from "../shaman/HOSDeployable.sol";
+import { ManagerShaman } from "../shaman/ManagerShaman.sol";
+import { ZodiacModuleShaman } from "../shaman/ZodiacModuleShaman.sol";
+import { IShaman } from "../shaman/interfaces/IShaman.sol";
 
 // import "hardhat/console.sol";
 
@@ -43,7 +42,7 @@ error Yeet24ShamanModule__ExecutionFailed(bytes returnData);
  * a Safe module to the Baal/Yeeter vault.
  */
 
-contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, ManagerShaman, HosDeployable {
+contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, ManagerShaman, HOSDeployable {
     /// @dev UniswapV3 NonfungiblePositionManager contract
     INonfungiblePositionManager public nonfungiblePositionManager;
     /// @dev WETH address
@@ -168,11 +167,11 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         uint256 _endTime,
         uint24 _poolFee
     ) internal onlyInitializing {
-        __ZodiacModuleShaman__init("Yeet24ShamanModule", _baal, _vault);
-        __HosDeployable_init(keccak256(abi.encode(name())));
+        __ZodiacModuleShaman_init("Yeet24ShamanModule", _baal, _vault);
+        __HOSDeployable_init(keccak256(abi.encode(name())));
         __AdminShaman_init_unchained();
         __ManagerShaman_init_unchained();
-        __Yeet24ShamanModule__init_unchained(
+        __Yeet24ShamanModule_init_unchained(
             _nftPositionManager,
             _weth9Address,
             _boostRewardsPool,
@@ -192,7 +191,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
      * @param _endTime campaign end timestamp is seconds
      * @param _poolFee pool fee to be used by the token launcher
      */
-    function __Yeet24ShamanModule__init_unchained(
+    function __Yeet24ShamanModule_init_unchained(
         address _nftPositionManager,
         address _weth9Address,
         address _boostRewardsPool,
@@ -392,14 +391,24 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             amounts[0] = IERC20(token).totalSupply();
 
             // ManagerShaman action: mint 100% shares to this contract. this doubles the total shares
-            mintShares(receivers, amounts);
+            _baal.mintShares(receivers, amounts);
 
             // AdminShaman action: Make shares/loot transferrable
-            setAdminConfig(false, false);
+            _baal.setAdminConfig(false, false);
 
-            // claim rewards from the boostRewardsPool if available
-            boostRewards += IYeet24ClaimModule(boostRewardsPool).claimReward(vault(), payable(address(this)));
-
+            // Yeet24ClaimModule action: claim additional rewards from the boostRewardsPool if available
+            // NOTICE: it uses ERC165 to check whether contract supports claim module interface
+            (, bytes memory ifaceReturnData) = boostRewardsPool.call(
+                abi.encodeWithSelector(IERC165.supportsInterface.selector, type(IYeet24ClaimModule).interfaceId)
+            );
+            bytes32 boolResult = bytes32(ifaceReturnData); // truncate return data. Should only return a boolean
+            bool isClaimModule;
+            assembly {
+                isClaimModule := boolResult
+            }
+            if (isClaimModule) {
+                boostRewards += IYeet24ClaimModule(boostRewardsPool).claimReward(vault(), payable(address(this)));
+            }
             // Shaman action: if any boostRewards (e.g. fees + extra boostRewardsPool deposits) are available,
             // forward balance to the vault in charge of minting the pool initial liquidity position
             if (boostRewards > 0) {
