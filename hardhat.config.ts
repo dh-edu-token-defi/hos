@@ -248,14 +248,14 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       buildbear: "verifyContract",
-      mainnet: explorerApiKey("mainnet"),
-      sepolia: "XBZRTK1ZDSWBMSU19N6VGHAP65CPENM6ZY", // explorerApiKey("sepolia"),
+      mainnet: "", //explorerApiKey("mainnet"),
+      sepolia: "", // explorerApiKey("sepolia"),
       optimisticEthereum: explorerApiKey("optimism-mainnet"),
       // optimisticSepolia: explorerApiKey("optimism-sepolia"),
       arbitrumOne: explorerApiKey("arbitrum-mainnet"),
       // arbitrumSepolia: explorerApiKey("arbitrum-sepolia"),
       polygon: explorerApiKey("polygon-mainnet"),
-      base: explorerApiKey("base-mainnet"),
+      base: "", // explorerApiKey("base-mainnet"),
     },
     customChains: [
       {

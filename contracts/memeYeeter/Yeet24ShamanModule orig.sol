@@ -53,10 +53,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
     /// It could be set to the zero address if no boosts rewards are plugged in into the campaign.
     address payable public boostRewardsPool;
 
-    /// @notice locker address
-    /// @ dev NFT fee locker or position recipient
-    address public locker;
-
     /// @notice UniV3Pool address
     /// @dev address is set only when a token is successfully launched
     address public pool;
@@ -157,7 +153,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
      * @param _nftPositionManager UniV3 NonfungiblePositionManager contract address
      * @param _weth9Address weth address
      * @param _boostRewardsPool boost rewards pool address
-     * @param _locker nft transfer approval
      * @param _goal campaign funding goal
      * @param _endTime campaign end timestamp is seconds
      * @param _poolFee pool fee to be used by the token launcher
@@ -168,7 +163,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         address _nftPositionManager,
         address _weth9Address,
         address _boostRewardsPool,
-        address _locker,
         uint256 _goal,
         uint256 _endTime,
         uint24 _poolFee
@@ -181,7 +175,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             _nftPositionManager,
             _weth9Address,
             _boostRewardsPool,
-            _locker,
             _goal,
             _endTime,
             _poolFee
@@ -194,7 +187,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
      * @param _nftPositionManager UniV3 NonfungiblePositionManager contract address
      * @param _weth9Address weth address
      * @param _boostRewardsPool boost rewards pool address
-     * @param _locker nft transfer approval
      * @param _goal campaign funding goal
      * @param _endTime campaign end timestamp is seconds
      * @param _poolFee pool fee to be used by the token launcher
@@ -203,7 +195,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         address _nftPositionManager,
         address _weth9Address,
         address _boostRewardsPool,
-        address _locker,
         uint256 _goal,
         uint256 _endTime,
         uint24 _poolFee
@@ -220,7 +211,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         goal = _goal;
         endTime = _endTime;
         poolFee = _poolFee;
-        locker = _locker;
     }
 
     /**
@@ -232,18 +222,16 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             address _nftPositionManager,
             address _weth9Address,
             address _boostRewardsPool,
-            address _locker,
             uint256 _goal,
             uint256 _expiration,
             uint24 _poolFee
-        ) = abi.decode(_initializeParams, (address, address, address, address, uint256, uint256, uint24));
+        ) = abi.decode(_initializeParams, (address, address, address, uint256, uint256, uint24));
         __Yeet24ShamanModule__init(
             _baal,
             _vault,
             _nftPositionManager,
             _weth9Address,
             _boostRewardsPool,
-            _locker,
             _goal,
             _expiration,
             _poolFee
@@ -335,7 +323,7 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             amount1Desired: liquidityAmount1,
             amount0Min: 0,
             amount1Min: 0,
-            recipient: address(this), // baalVaultOnly ensures vault is the caller TODO: transfer to locker
+            recipient: _msgSender(), // baalVaultOnly ensures vault is the caller
             deadline: block.timestamp + 15 minutes // Ensure a reasonable deadline
         });
 
@@ -344,10 +332,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
             mintParams
         );
         positionId = tokenId;
-
-        // approve transfer to the locker
-        approvePostionTransfer(locker, tokenId);
-
         // console.log("sqrtPriceX96", sqrtPriceX96);
         // console.log("Desired liq0", liquidityAmount0);
         // console.log("Desired liq1", liquidityAmount1);
@@ -475,12 +459,6 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         if (!transferSuccess) revert Yeet24ShamanModule__TransferFailed(returnData);
         emit ShamanBalanceWithdrawn(shamanBalance);
     }
-
-    function approvePostionTransfer(address to, uint256 tokenId) public baalVaultOnly {
-        nonfungiblePositionManager.approve(to, tokenId);
-    }
-
-    function withdrawFees() external {}
 
     /**
      * @notice Accept ETH deposits as a form of rewards to boost initial pool liquidity

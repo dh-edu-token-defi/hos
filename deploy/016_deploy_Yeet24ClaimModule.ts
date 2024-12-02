@@ -16,7 +16,8 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const maxReward = "300000000000000000"; // TODO: parametrize
   const rewardPercent = "15"; // TODO: parametrize
   let initialOwner = "0xCED608Aa29bB92185D9b6340Adcbfa263DAe075b"; // TODO: parametrize
-  let yeet24HOSAddress = "0xde65e8b424438b361d8f4a8896f92956510b08dc"; // TODO: parametrize
+  let yeet24HOSAddress = "0xe6eB99FaB27bE81D5F5F4dC44fCdf508a1B97Cd3"; // TODO: parametrize
+  console.log("ARE YOU USING THE RIGHT HOS?", yeet24HOSAddress);
   if (network.name === "hardhat") {
     initialOwner = deployer;
     yeet24HOSAddress = (await deployments.get("Yeet24HOS")).address;
@@ -25,7 +26,7 @@ const deployFn: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   // shaman template id keccak256(abi.encode("Yeet24ShamanModule"))
   const encodedData = ethers.utils.defaultAbiCoder.encode(["string"], ["Yeet24ShamanModule"]);
   const shamanTemplateId = ethers.utils.keccak256(encodedData);
-  
+
   const params = [initialOwner, yeet24HOSAddress, shamanTemplateId, maxReward, rewardPercent];
 
   console.log("Yeet24ShamanModule params", params);
