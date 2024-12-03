@@ -24,11 +24,11 @@ error CannotTransferBeforeLockPeriod(uint256 currentTime, uint256 lockTime);
 
 contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     struct Locker {
-        address[] recipients;
-        uint256[] percentages;
+        address[] feeRecipients;
+        uint256[] feePercentages;
         uint256 tokenId;
         address initialHolder;
-        address singleClaimRecipient;
+        address originOwner;
         uint256 createdAt;
         bool isInitialized;
     }
@@ -57,31 +57,28 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
     }
 
     function createLocker(
-        address[] memory _recipients,
-        uint256[] memory _percentages,
+        address[] memory _feeRecipients,
+        uint256[] memory _feePercentages,
         address _initialHolder
     ) external returns (uint256 lockerId) {
-        if (_recipients.length != _percentages.length) {
+        if (_feeRecipients.length != _feePercentages.length) {
             revert RecipientsAndPercentagesMismatch();
         }
         uint256 totalPercentage = 0;
-        for (uint256 i = 0; i < _percentages.length; i++) {
-            totalPercentage += _percentages[i];
+        for (uint256 i = 0; i < _feePercentages.length; i++) {
+            totalPercentage += _feePercentages[i];
         }
         if (totalPercentage != 100) {
             revert InvalidPercentageSum(totalPercentage);
         }
 
         lockerId = nextLockerId++;
-        lockers[lockerId] = Locker({
-            recipients: _recipients,
-            percentages: _percentages,
-            tokenId: 0,
-            initialHolder: _initialHolder,
-            singleClaimRecipient: _msgSender(), // should be the DAO
-            createdAt: block.timestamp,
-            isInitialized: false
-        });
+        Locker storage locker = lockers[lockerId];
+        locker.feeRecipients = _feeRecipients;
+        locker.feePercentages = _feePercentages;
+        locker.initialHolder = _initialHolder;
+        locker.originOwner = _msgSender(); // should be the DAO
+        locker.createdAt = block.timestamp;
         emit LockerCreated(lockerId, _initialHolder, block.timestamp);
     }
 
@@ -119,22 +116,22 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
 
         // Distribute fees based on time elapsed
         if (block.timestamp < locker.createdAt + initialLockPeriod) {
-            for (uint256 i = 0; i < locker.recipients.length; i++) {
-                uint256 share0 = (amount0 * locker.percentages[i]) / 100;
-                uint256 share1 = (amount1 * locker.percentages[i]) / 100;
+            for (uint256 i = 0; i < locker.feeRecipients.length; i++) {
+                uint256 share0 = (amount0 * locker.feePercentages[i]) / 100;
+                uint256 share1 = (amount1 * locker.feePercentages[i]) / 100;
 
                 // use safe transfer?
-                IERC20(token0).transfer(locker.recipients[i], share0);
-                IERC20(token1).transfer(locker.recipients[i], share1);
-                emit FeesCollected(lockerId, locker.recipients[i], share0, share1);
+                IERC20(token0).transfer(locker.feeRecipients[i], share0);
+                IERC20(token1).transfer(locker.feeRecipients[i], share1);
+                emit FeesCollected(lockerId, locker.feeRecipients[i], share0, share1);
             }
         } else {
             // After initialLockPeriod, send all fees to the single recipient
-            payable(locker.singleClaimRecipient).transfer(amount0);
+            payable(locker.originOwner).transfer(amount0); // TODO: this doesn't look right. Fees are in weth/token
 
-            IERC20(token0).transfer(locker.singleClaimRecipient, amount0);
-            IERC20(token1).transfer(locker.singleClaimRecipient, amount1);
-            emit FeesCollected(lockerId, locker.singleClaimRecipient, amount0, amount1);
+            IERC20(token0).transfer(locker.originOwner, amount0);
+            IERC20(token1).transfer(locker.originOwner, amount1);
+            emit FeesCollected(lockerId, locker.originOwner, amount0, amount1);
         }
     }
 
@@ -143,7 +140,7 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
         if (block.timestamp < locker.createdAt + initialLockPeriod) {
             revert CannotTransferBeforeLockPeriod(block.timestamp, locker.createdAt + initialLockPeriod);
         }
-        if (msg.sender != locker.singleClaimRecipient) {
+        if (_msgSender() != locker.originOwner) {
             revert Unauthorized(_msgSender());
         }
 
@@ -152,7 +149,7 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
 
         // Clear locker state
         delete lockers[lockerId];
-        emit NFTTransferred(lockerId, locker.singleClaimRecipient);
+        emit NFTTransferred(lockerId, locker.originOwner);
     }
 
     function getTokenAddresses(uint256 tokenId) internal view returns (address token0, address token1) {
@@ -165,10 +162,10 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
      * @dev IERC721Receiver implementation to handle incoming NFTs safely
      */
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
+        address /*operator*/,
+        address /*from*/,
+        uint256 /*tokenId*/,
+        bytes calldata /*data*/
     ) external pure override returns (bytes4) {
         // Return the selector to confirm the token transfer
         return IERC721Receiver.onERC721Received.selector;

@@ -345,8 +345,8 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         );
         positionId = tokenId;
 
-        // approve transfer to the locker
-        approvePostionTransfer(locker, tokenId);
+        // approve NFT Position operator to the locker contract
+        approvePositionOperator(locker, tokenId);
 
         // console.log("sqrtPriceX96", sqrtPriceX96);
         // console.log("Desired liq0", liquidityAmount0);
@@ -476,8 +476,8 @@ contract Yeet24ShamanModule is IYeet24Shaman, ZodiacModuleShaman, AdminShaman, M
         emit ShamanBalanceWithdrawn(shamanBalance);
     }
 
-    function approvePostionTransfer(address to, uint256 tokenId) public baalVaultOnly {
-        nonfungiblePositionManager.approve(to, tokenId);
+    function approvePositionOperator(address _operator, uint256 _tokenId) public baalVaultOnly {
+        nonfungiblePositionManager.approve(_operator, _tokenId);
     }
 
     function withdrawFees() external {}
