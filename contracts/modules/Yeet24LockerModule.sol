@@ -126,9 +126,7 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
                 emit FeesCollected(lockerId, locker.feeRecipients[i], share0, share1);
             }
         } else {
-            // After initialLockPeriod, send all fees to the single recipient
-            payable(locker.originOwner).transfer(amount0); // TODO: this doesn't look right. Fees are in weth/token
-
+            // After initialLockPeriod, send all fees to the position's originOwner
             IERC20(token0).transfer(locker.originOwner, amount0);
             IERC20(token1).transfer(locker.originOwner, amount1);
             emit FeesCollected(lockerId, locker.originOwner, amount0, amount1);
