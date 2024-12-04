@@ -82,7 +82,7 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
         emit LockerCreated(lockerId, _initialHolder, block.timestamp);
     }
 
-    function initializeLocker(uint256 lockerId, uint256 tokenId) external {
+    function lockPosition(uint256 lockerId, uint256 tokenId) external {
         Locker storage locker = lockers[lockerId];
         if (locker.isInitialized) {
             revert LockerAlreadyInitialized();
