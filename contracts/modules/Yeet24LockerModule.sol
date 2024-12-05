@@ -17,8 +17,7 @@ import { INonfungiblePositionManager } from "../libs/INonfungiblePositionManager
 
 error RecipientsAndPercentagesMismatch();
 error InvalidPercentageSum(uint256 total);
-error LockerAlreadyInitialized();
-error LockerNotInitialized();
+error LockerPositionMismatch();
 error Unauthorized(address caller);
 error CannotTransferBeforeLockPeriod(uint256 currentTime, uint256 lockTime);
 
@@ -41,8 +40,9 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
 
     // events
     event LockerCreated(uint256 indexed lockerId, address initialHolder, uint256 createdAt);
-    event FeesCollected(uint256 indexed lockerId, address recipient, uint256 amount0, uint256 amount1);
-    event NFTTransferred(uint256 indexed lockerId, address recipient);
+    event LockerInitialized(uint256 indexed lockerId, uint256 tokenId);
+    event FeesCollected(uint256 indexed lockerId, address indexed recipient, uint256 amount0, uint256 amount1);
+    event PositionUnlocked(uint256 indexed lockerId, uint256 indexed tokenId, address recipient);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -82,28 +82,23 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
         emit LockerCreated(lockerId, _initialHolder, block.timestamp);
     }
 
-    function lockPosition(uint256 lockerId, uint256 tokenId) external {
-        Locker storage locker = lockers[lockerId];
-        if (locker.isInitialized) {
-            revert LockerAlreadyInitialized();
-        }
-
-        // Transfer NFT to this contract
-        positionManager.transferFrom(locker.initialHolder, address(this), tokenId);
-        locker.tokenId = tokenId;
-        locker.isInitialized = true;
-        collectFees(lockerId);
-    }
-
-    function collectFees(uint256 lockerId) public nonReentrant {
+    function collectFees(uint256 lockerId, uint256 tokenId) public nonReentrant {
         Locker storage locker = lockers[lockerId];
         if (!locker.isInitialized) {
-            revert LockerNotInitialized();
+            // Transfer+Lock NFT to this contract
+            positionManager.transferFrom(locker.initialHolder, address(this), tokenId);
+            locker.tokenId = tokenId;
+            locker.isInitialized = true;
+            emit LockerInitialized(lockerId, tokenId);
+            
+        } else if (locker.tokenId != tokenId) {
+            revert LockerPositionMismatch();
         }
+
 
         // Collect fees from the NFT position
         INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
-            tokenId: locker.tokenId,
+            tokenId: tokenId,
             recipient: address(this),
             amount0Max: type(uint128).max,
             amount1Max: type(uint128).max
@@ -112,7 +107,7 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
         (uint256 amount0, uint256 amount1) = positionManager.collect(params);
 
         // Retrieve token addresses
-        (address token0, address token1) = getTokenAddresses(locker.tokenId);
+        (address token0, address token1) = getTokenAddresses(tokenId);
 
         // Distribute fees based on time elapsed
         if (block.timestamp < locker.createdAt + initialLockPeriod) {
@@ -133,21 +128,25 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
         }
     }
 
-    function transferNFTOut(uint256 lockerId) external {
-        Locker storage locker = lockers[lockerId];
-        if (block.timestamp < locker.createdAt + initialLockPeriod) {
-            revert CannotTransferBeforeLockPeriod(block.timestamp, locker.createdAt + initialLockPeriod);
+    function unlockPosition(uint256 lockerId) external {
+        Locker memory locker = lockers[lockerId];
+        address positionOwner = locker.originOwner;
+        if (_msgSender() != positionOwner) {
+            revert Unauthorized(positionOwner);
         }
-        if (_msgSender() != locker.originOwner) {
-            revert Unauthorized(_msgSender());
+        uint256 lockTime = locker.createdAt + initialLockPeriod;
+        if (block.timestamp < lockTime) {
+            revert CannotTransferBeforeLockPeriod(block.timestamp, lockTime);
         }
 
         // Transfer the NFT out
-        positionManager.transferFrom(address(this), _msgSender(), locker.tokenId);
+        uint256 tokenId = locker.tokenId;
+        positionManager.transferFrom(address(this), positionOwner, tokenId);
 
         // Clear locker state
         delete lockers[lockerId];
-        emit NFTTransferred(lockerId, locker.originOwner);
+
+        emit PositionUnlocked(lockerId, tokenId, positionOwner);
     }
 
     function getTokenAddresses(uint256 tokenId) internal view returns (address token0, address token1) {
