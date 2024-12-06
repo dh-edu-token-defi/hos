@@ -90,11 +90,9 @@ contract Yeet24LockerModule is IERC721Receiver, OwnableUpgradeable, ReentrancyGu
             locker.tokenId = tokenId;
             locker.isInitialized = true;
             emit LockerInitialized(lockerId, tokenId);
-            
         } else if (locker.tokenId != tokenId) {
             revert LockerPositionMismatch();
         }
-
 
         // Collect fees from the NFT position
         INonfungiblePositionManager.CollectParams memory params = INonfungiblePositionManager.CollectParams({
